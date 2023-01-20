@@ -15,10 +15,15 @@ buildscript {
         maven { url = "https://oss.sonatype.org/content/repositories/snapshots/" }
         maven { url = "https://maven.tterrag.com/" }
         maven { url = 'https://jitpack.io' }
+
+        maven { url = 'https://maven.parchmentmc.org' }
     }
 
     dependencies {
         classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
+
+        classpath 'org.parchmentmc:librarian:1.+'
+
         classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT'
         classpath 'com.github.jengelman.gradle.plugins:shadow:5.2.0'
     }
@@ -29,6 +34,9 @@ def mcVersionStr = "${(int)(mcVersion/10000)}.${(int)(mcVersion/100)%100}" + (mc
 
 apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'net.minecraftforge.gradle'
+
+apply plugin: 'org.parchmentmc.librarian.forgegradle'
+
 apply plugin: 'org.spongepowered.mixin'
 
 ext {
@@ -117,7 +125,8 @@ minecraft {
         }
     }
 
-    mappings channel: 'snapshot', version: '20210309-1.16.4'
+    //mappings channel: 'snapshot', version: '20210309-1.16.4'
+    mappings channel: 'parchment', version: '2022.11.06-1.18.2'
 }
 
 repositories {
@@ -155,7 +164,7 @@ dependencies {
         exclude group: 'com.google.code.gson', module: 'gson' // provided by MC
     }
 
-    minecraft 'net.minecraftforge:forge:1.18.2-40.1.93'
+    minecraft 'net.minecraftforge:forge:1.18.2-40.2.0'
     //minecraft 'net.minecraftforge:forge:1.16.4-35.1.37'
 
     annotationProcessor "org.spongepowered:mixin:$mixinVersion"
