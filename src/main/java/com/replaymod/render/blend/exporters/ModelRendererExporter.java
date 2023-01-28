@@ -4,7 +4,7 @@ import com.replaymod.render.blend.BlendMeshBuilder;
 import com.replaymod.render.blend.Exporter;
 import com.replaymod.render.blend.data.DMesh;
 import com.replaymod.render.blend.data.DObject;
-import net.minecraft.client.renderer.model.ModelRenderer;
+import net.minecraft.client.model.geom.ModelPart;
 import org.lwjgl.opengl.GL11;
 
 import java.io.IOException;
@@ -12,9 +12,9 @@ import java.io.IOException;
 import static com.replaymod.render.blend.Util.isGlTextureMatrixIdentity;
 
 public class ModelRendererExporter implements Exporter {
-    private final RenderState renderState;
+    private final RenderStateShard renderState;
 
-    public ModelRendererExporter(RenderState renderState) {
+    public ModelRendererExporter(RenderStateShard renderState) {
         this.renderState = renderState;
     }
 
@@ -22,7 +22,7 @@ public class ModelRendererExporter implements Exporter {
     public void setup() throws IOException {
     }
 
-    public void preRenderModel(ModelRenderer model, float scale) {
+    public void preRenderModel(ModelPart model, float scale) {
         DObject object = getObjectForModel(model, scale);
         renderState.pushObject(object);
         renderState.pushModelView();
@@ -44,7 +44,7 @@ public class ModelRendererExporter implements Exporter {
         renderState.pop();
     }
 
-    private DObject getObjectForModel(ModelRenderer model, float scale) {
+    private DObject getObjectForModel(ModelPart model, float scale) {
         int frame = renderState.getFrame();
         DObject parent = renderState.peekObject();
         DObject object = null;
@@ -65,7 +65,7 @@ public class ModelRendererExporter implements Exporter {
         return object;
     }
 
-    private static DMesh generateMesh(ModelRenderer model, float scale) {
+    private static DMesh generateMesh(ModelPart model, float scale) {
         DMesh mesh = new DMesh();
         BlendMeshBuilder builder = new BlendMeshBuilder(mesh);
         // FIXME 1.15
@@ -74,17 +74,17 @@ public class ModelRendererExporter implements Exporter {
     }
 
     private static class ModelBasedDObject extends DObject {
-        private final ModelRenderer model;
+        private final ModelPart model;
         private final float scale;
         private boolean valid;
 
-        public ModelBasedDObject(ModelRenderer model, float scale) {
+        public ModelBasedDObject(ModelPart model, float scale) {
             super(generateMesh(model, scale));
             this.model = model;
             this.scale = scale;
         }
 
-        public boolean isBasedOn(ModelRenderer model, float scale) {
+        public boolean isBasedOn(ModelPart model, float scale) {
             return this.model == model && Math.abs(this.scale - scale) < 1e-4;
         }
 

@@ -38,7 +38,7 @@ import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;
 
 import java.util.function.Consumer;
 
-public class GuiYesNoPopup extends AbstractGuiPopup<GuiYesNoPopup> implements Typeable {
+public class GuiYesNoPopup extends GuiComponentPopup<GuiYesNoPopup> implements Typeable {
     public static GuiYesNoPopup open(com.replaymod.gui.container.GuiContainer container, GuiElement... info) {
         GuiYesNoPopup popup = new GuiYesNoPopup(container).setBackgroundColor(Colors.DARK_TRANSPARENT);
         popup.getInfo().addElements(new com.replaymod.gui.layout.VerticalLayout.Data(0.5), info);

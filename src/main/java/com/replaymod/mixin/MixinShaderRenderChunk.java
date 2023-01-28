@@ -2,22 +2,24 @@ package com.replaymod.mixin;
 
 import com.replaymod.render.hooks.EntityRendererHandler;
 import net.minecraft.client.Minecraft;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(net.minecraft.client.renderer.chunk.ChunkRenderDispatcher.ChunkRender.class)
+@Mixin(net.minecraft.client.renderer.chunk.ChunkRenderDispatcher.RenderChunk.class)
 public abstract class MixinShaderRenderChunk {
 
     private final Minecraft mc = Minecraft.getInstance();
 
+    @Final
     @Shadow
-    private int frameIndex;
+    public int index;
 
     @Shadow
-    public abstract boolean shouldStayLoaded();
+    public abstract boolean hasAllNeighbors();
 
 
     /**
@@ -31,12 +33,12 @@ public abstract class MixinShaderRenderChunk {
      * This is the most convenient place to re-introduce the check (setRebuildFrame would normally be called right after
      * shouldBuild, if it returns true).
      */
-    @Inject(method = "setFrameIndex", at = @At("HEAD"), cancellable = true)
+    /*@Inject(method = "setFrameIndex", at = @At("HEAD"), cancellable = true)
     private void replayModCompat_OFHaveYouConsideredWhetherThisChunkShouldEvenBeBuilt(int rebuildFrame, CallbackInfoReturnable<Boolean> ci) {
-        if (this.frameIndex == rebuildFrame) {
+        if (this.index == rebuildFrame) {
             // want to keep the fast path
             ci.setReturnValue(false);
-        } else if (!this.shouldStayLoaded()) {
+        } else if (!this.hasAllNeighbors()) {
             // this is the check which OF removed
             // So, I think I figured out the reason why optifine applies this change: It's so chunks which are outside
             // the server view distance are still rendered if they've previously compiled. The bug still stands but
@@ -45,16 +47,18 @@ public abstract class MixinShaderRenderChunk {
             if (((EntityRendererHandler.IEntityRenderer) mc.gameRenderer).replayModRender_getHandler() == null) return;
             ci.setReturnValue(false);
         }
-    }
+    }*/
 
     /**
      * Changes the RenderChunk#isPlayerUpdate method that Optifine adds
      * to always return true while rendering so no chunks are being added
      * to a separate rendering queue
      */
-    @Inject(method = "isPlayerUpdate", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "isDirtyFromPlayer", at = @At("HEAD"), cancellable = true, remap = false)
     private void replayModCompat_disableIsPlayerUpdate(CallbackInfoReturnable<Boolean> ci) {
-        if (((EntityRendererHandler.IEntityRenderer) mc.gameRenderer).replayModRender_getHandler() == null) return;
+        if (((EntityRendererHandler.IEntityRenderer) mc.gameRenderer).replayModRender_getHandler() == null) {
+            return;
+        }
         ci.setReturnValue(true);
     }
 

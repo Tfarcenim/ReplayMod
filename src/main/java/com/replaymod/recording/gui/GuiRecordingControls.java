@@ -13,10 +13,12 @@ import com.replaymod.gui.layout.HorizontalLayout;
 import com.replaymod.gui.utils.EventRegistrations;
 import com.replaymod.gui.versions.callbacks.InitScreenCallback;
 import com.replaymod.recording.packet.PacketListener;
-import net.minecraft.client.gui.screen.IngameMenuScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.Widget;
+import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.AbstractWidget;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -31,7 +33,9 @@ public class GuiRecordingControls extends EventRegistrations {
 
     private GuiButton buttonPauseResume = new GuiButton(panel).onClick(() -> {
         if (Utils.ifMinimalModeDoPopup(panel, () -> {
-        })) return;
+        })) {
+            return;
+        }
         if (paused) {
             packetListener.addMarker(MarkerProcessor.MARKER_NAME_END_CUT);
         } else {
@@ -43,7 +47,9 @@ public class GuiRecordingControls extends EventRegistrations {
 
     private GuiButton buttonStartStop = new GuiButton(panel).onClick(() -> {
         if (Utils.ifMinimalModeDoPopup(panel, () -> {
-        })) return;
+        })) {
+            return;
+        }
         if (stopped) {
             paused = false;
             packetListener.addMarker(MarkerProcessor.MARKER_NAME_END_CUT);
@@ -82,13 +88,15 @@ public class GuiRecordingControls extends EventRegistrations {
     private void injectIntoIngameMenu(Screen guiScreen,
                                       List<Widget> buttonList
     ) {
-        if (!(guiScreen instanceof IngameMenuScreen)) {
+        if (!(guiScreen instanceof PauseScreen)) {
             return;
         }
+        List<AbstractWidget> list = new ArrayList<>();
+        buttonList.stream().filter(a -> a instanceof AbstractWidget).forEach(a -> list.add((AbstractWidget) a));
         Function<Integer, Integer> yPos =
-                MCVer.findButton(buttonList, "menu.returnToMenu", 1)
+                MCVer.findButton(list, "menu.returnToMenu", 1)
                         .map(Optional::of)
-                        .orElse(MCVer.findButton(buttonList, "menu.disconnect", 1))
+                        .orElse(MCVer.findButton(list, "menu.disconnect", 1))
                         .<Function<Integer, Integer>>map(it -> (height) -> it.y)
                         .orElse((height) -> height / 4 + 120 - 16);
         VanillaGuiScreen vanillaGui = VanillaGuiScreen.wrap(guiScreen);

@@ -13,8 +13,8 @@ public class StereoscopicOpenGlFrameCapturer
         LEFT_EYE, RIGHT_EYE
     }
 
-    public StereoscopicOpenGlFrameCapturer(WorldRenderer worldRenderer, RenderInfo renderInfo) {
-        super(worldRenderer, renderInfo);
+    public StereoscopicOpenGlFrameCapturer(LevelRenderer levelRenderer, RenderInfo renderInfo) {
+        super(levelRenderer, renderInfo);
     }
 
     @Override

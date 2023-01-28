@@ -2,12 +2,13 @@ package com.replaymod.replay;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.replaymod.core.ReplayMod;
 import com.replaymod.gui.versions.Image;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.ScreenShotHelper;
+import net.minecraft.client.Screenshot;
+import org.lwjgl.opengl.GL11;
 
 
 public class NoGuiScreenshot {
@@ -42,42 +43,43 @@ public class NoGuiScreenshot {
                     return;
                 }
 
-                int frameWidth = mc.getMainWindow().getFramebufferWidth();
-                int frameHeight = mc.getMainWindow().getFramebufferHeight();
+                //WTF
+                int frameWidth = mc.getMainRenderTarget().width;
+                int frameHeight = mc.getMainRenderTarget().height;
 
-                final boolean guiHidden = mc.gameSettings.hideGUI;
+                final boolean guiHidden = mc.options.hideGui;
                 try {
-                    mc.gameSettings.hideGUI = true;
+                    mc.options.hideGui = true;
 
                     // Render frame without GUI
-                    GlStateManager.pushMatrix();
-                    GlStateManager.clear(
+                    GL11.glPushMatrix();
+                    GlStateManager._clear(
                             16640
                             , true
                     );
-                    mc.getFramebuffer().bindFramebuffer(true);
-                    GlStateManager.enableTexture();
+                    mc.getMainRenderTarget().bindWrite(true);
+                    GlStateManager._enableTexture();
 
-                    float tickDelta = mc.getRenderPartialTicks();
-                    mc.gameRenderer.renderWorld(tickDelta, System.nanoTime(), new MatrixStack());
+                    float tickDelta = mc.getFrameTime();
+                    mc.gameRenderer.renderLevel(tickDelta, System.nanoTime(), new PoseStack());
 
-                    mc.getFramebuffer().unbindFramebuffer();
-                    GlStateManager.popMatrix();
-                    GlStateManager.pushMatrix();
-                    mc.getFramebuffer().framebufferRender(frameWidth, frameHeight);
-                    GlStateManager.popMatrix();
+                    mc.getMainRenderTarget().unbindWrite();
+                    GL11.glPopMatrix();
+                    GL11.glPushMatrix();
+                    mc.getMainRenderTarget().blitToScreen(frameWidth, frameHeight);
+                    GL11.glPopMatrix();
                 } catch (Throwable t) {
                     future.setException(t);
                     return;
                 } finally {
                     // Reset GUI settings
-                    mc.gameSettings.hideGUI = guiHidden;
+                    mc.options.hideGui = guiHidden;
                 }
 
                 // The frame without GUI has been rendered
                 // Read it, create the screenshot and finish the future
                 try {
-                    Image image = new Image(ScreenShotHelper.createScreenshot(frameWidth, frameHeight, mc.getFramebuffer()));
+                    Image image = new Image(Screenshot.takeScreenshot(mc.getMainRenderTarget()));
                     int imageWidth = image.getWidth();
                     int imageHeight = image.getHeight();
 

@@ -33,7 +33,7 @@ public class ReplayModBackend {
     }
 
     public String getMinecraftVersion() {
-        return "1.16.4";
+        return "1.18.2";
     }
 
     public boolean isModLoaded(String id) {

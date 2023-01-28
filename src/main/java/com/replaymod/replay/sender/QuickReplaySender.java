@@ -21,21 +21,24 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.IPacket;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.network.PacketDirection;
-import net.minecraft.network.ProtocolType;
-import net.minecraft.network.play.server.SPlayerPositionLookPacket;
-import net.minecraft.network.play.server.SRespawnPacket;
-import net.minecraft.util.registry.DynamicRegistries;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.world.DimensionType;
-import net.minecraft.world.GameType;
-import net.minecraft.world.World;
+import net.minecraft.core.Holder;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.ConnectionProtocol;
+import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
+import net.minecraft.network.protocol.game.ClientboundRespawnPacket;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.Registry;
+import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 import static com.replaymod.core.versions.MCVer.getMinecraft;
@@ -53,7 +56,7 @@ public class QuickReplaySender extends ChannelHandlerAdapter implements ReplaySe
     private final Minecraft mc = getMinecraft();
 
     private final ReplayModReplay mod;
-    private final RandomAccessReplay<IPacket<?>> replay;
+    private final RandomAccessReplay<Packet<?>> replay;
     private final EventHandler eventHandler = new EventHandler();
     private ChannelHandlerContext ctx;
 
@@ -74,28 +77,24 @@ public class QuickReplaySender extends ChannelHandlerAdapter implements ReplaySe
 
     public QuickReplaySender(ReplayModReplay mod, ReplayFile replayFile) {
         this.mod = mod;
-        this.replay = new RandomAccessReplay<IPacket<?>>(replayFile, getPacketTypeRegistry(false)) {
+        this.replay = new RandomAccessReplay<Packet<?>>(replayFile, getPacketTypeRegistry(false)) {
             private byte[] buf = new byte[0];
 
             @Override
-            protected IPacket<?> decode(com.github.steveice10.netty.buffer.ByteBuf byteBuf) throws IOException {
+            protected Packet<?> decode(com.github.steveice10.netty.buffer.ByteBuf byteBuf) throws IOException {
                 int packetId = new ByteBufNetInput(byteBuf).readVarInt();
-                IPacket<?> mcPacket = ProtocolType.PLAY.getPacket(PacketDirection.CLIENTBOUND, packetId);
-                if (mcPacket != null) {
-                    int size = byteBuf.readableBytes();
-                    if (buf.length < size) {
-                        buf = new byte[size];
-                    }
-                    byteBuf.readBytes(buf, 0, size);
-                    ByteBuf wrappedBuf = Unpooled.wrappedBuffer(buf);
-                    wrappedBuf.writerIndex(size);
-                    mcPacket.readPacketData(new PacketBuffer(wrappedBuf));
+                int size = byteBuf.readableBytes();
+                if (buf.length < size) {
+                    buf = new byte[size];
                 }
-                return mcPacket;
+                byteBuf.readBytes(buf, 0, size);
+                ByteBuf wrappedBuf = Unpooled.wrappedBuffer(buf);
+                wrappedBuf.writerIndex(size);
+                return ConnectionProtocol.PLAY.createPacket(PacketFlow.CLIENTBOUND, packetId, new FriendlyByteBuf(wrappedBuf));
             }
 
             @Override
-            protected void dispatch(IPacket<?> packet) {
+            protected void dispatch(Packet<?> packet) {
                 ctx.fireChannelRead(packet);
             }
         };
@@ -158,14 +157,19 @@ public class QuickReplaySender extends ChannelHandlerAdapter implements ReplaySe
             public void onFailure(Throwable t) {
                 // Error already printed by initialize method
             }
+        }, new Executor() {
+            @Override
+            public void execute(@NotNull Runnable command) {
+
+            }
         });
     }
 
     public void restart() {
         replay.reset();
-        ctx.fireChannelRead(new SRespawnPacket(
-                DimensionType.registerTypes(new DynamicRegistries.Impl()).getRegistry(Registry.DIMENSION_TYPE_KEY).getValueForKey(DimensionType.OVERWORLD),
-                World.OVERWORLD,
+        ctx.fireChannelRead(new ClientboundRespawnPacket(
+                Holder.direct(DimensionType.registerBuiltin(RegistryAccess.builtinCopy()).registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY).get(DimensionType.OVERWORLD_LOCATION)),
+                Level.OVERWORLD,
                 0,
                 GameType.SPECTATOR,
                 GameType.SPECTATOR,
@@ -173,7 +177,7 @@ public class QuickReplaySender extends ChannelHandlerAdapter implements ReplaySe
                 false,
                 false
         ));
-        ctx.fireChannelRead(new SPlayerPositionLookPacket(0, 0, 0, 0, 0, Collections.emptySet(), 0));
+        ctx.fireChannelRead(new ClientboundPlayerPositionPacket(0, 0, 0, 0, 0, Collections.emptySet(), 0,false));
     }
 
     @Override
@@ -205,7 +209,9 @@ public class QuickReplaySender extends ChannelHandlerAdapter implements ReplaySe
 
     @Override
     public void setAsyncMode(boolean async) {
-        if (this.asyncMode == async) return;
+        if (this.asyncMode == async) {
+            return;
+        }
         ensureInitialized(() -> {
             this.asyncMode = async;
             if (async) {
@@ -231,7 +237,9 @@ public class QuickReplaySender extends ChannelHandlerAdapter implements ReplaySe
         }
 
         private void onTick() {
-            if (!asyncMode || paused()) return;
+            if (!asyncMode || paused()) {
+                return;
+            }
 
             long now = System.currentTimeMillis();
             long realTimePassed = now - lastAsyncUpdateTime;

@@ -1,18 +1,18 @@
 package com.replaymod.recording;
 
-import com.replaymod.core.KeyBindingRegistry;
+import com.replaymod.core.KeyMappingRegistry;
 import com.replaymod.core.Module;
 import com.replaymod.core.ReplayMod;
 import com.replaymod.core.utils.Restrictions;
 import com.replaymod.core.versions.MCVer.Keyboard;
-import com.replaymod.mixin.NetworkManagerAccessor;
+import com.replaymod.mixin.ConnectionAccessor;
 import com.replaymod.recording.handler.ConnectionEventHandler;
 import com.replaymod.recording.handler.GuiHandler;
 import com.replaymod.recording.packet.PacketListener;
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
-import net.minecraft.network.NetworkManager;
-import net.minecraftforge.fml.network.NetworkRegistry;
+import net.minecraft.network.Connection;
+import net.minecraftforge.network.NetworkRegistry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -39,8 +39,8 @@ public class ReplayModRecording implements Module {
     }
 
     @Override
-    public void registerKeyBindings(KeyBindingRegistry registry) {
-        registry.registerKeyBinding("replaymod.input.marker", Keyboard.KEY_M, new Runnable() {
+    public void registerKeyMappings(KeyMappingRegistry registry) {
+        registry.registerKeyMapping("replaymod.input.marker", Keyboard.KEY_M, new Runnable() {
             @Override
             public void run() {
                 PacketListener packetListener = connectionEventHandler.getPacketListener();
@@ -62,12 +62,12 @@ public class ReplayModRecording implements Module {
     }
 
 
-    public void initiateRecording(NetworkManager networkManager) {
-        Channel channel = ((NetworkManagerAccessor) networkManager).getChannel();
+    public void initiateRecording(Connection connection) {
+        Channel channel = ((ConnectionAccessor) connection).getChannel();
         if (channel.pipeline().get("ReplayModReplay_replaySender") != null) return;
         if (channel.hasAttr(ATTR_CHECKED)) return;
         channel.attr(ATTR_CHECKED).set(null);
-        connectionEventHandler.onConnectedToServerEvent(networkManager);
+        connectionEventHandler.onConnectedToServerEvent(connection);
     }
 
     public ConnectionEventHandler getConnectionEventHandler() {

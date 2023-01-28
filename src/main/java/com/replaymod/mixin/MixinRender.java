@@ -3,8 +3,8 @@ package com.replaymod.mixin;
 import com.replaymod.extras.ReplayModExtras;
 import com.replaymod.extras.playeroverview.PlayerOverview;
 import net.minecraft.client.renderer.entity.EntityRenderer;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Coerce;
@@ -31,9 +31,9 @@ public abstract class MixinRender {
     @Inject(method = "shouldRender", at = @At("HEAD"), cancellable = true)
     public void replayModExtras_isPlayerHidden(Entity entity, @Coerce Object camera, double camX, double camY, double camZ, CallbackInfoReturnable<Boolean> ci) {
         ReplayModExtras.instance.get(PlayerOverview.class).ifPresent(playerOverview -> {
-            if (entity instanceof PlayerEntity) {
-                PlayerEntity player = (PlayerEntity) entity;
-                if (playerOverview.isHidden(player.getUniqueID())) {
+            if (entity instanceof Player) {
+                Player player = (Player) entity;
+                if (playerOverview.isHidden(player.getUUID())) {
                     ci.setReturnValue(false);
                 }
             }

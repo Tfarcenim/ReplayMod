@@ -12,10 +12,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(GameRenderer.class)
 public abstract class MixinShaderEntityRenderer {
 
-    @Inject(method = "renderWorld", at = @At("HEAD"))
+    @Inject(method = "renderLevel", at = @At("HEAD"))
     private void replayModCompat_updateShaderFrameTimeCounter(CallbackInfo ignore) {
-        if (ReplayModReplay.instance.getReplayHandler() == null) return;
-        if (ShaderReflection.shaders_frameTimeCounter == null) return;
+        if (ReplayModReplay.instance.getReplayHandler() == null) {
+            return;
+        }
+        if (ShaderReflection.shaders_frameTimeCounter == null) {
+            return;
+        }
 
         ReplayHandler replayHandler = ReplayModReplay.instance.getReplayHandler();
         float timestamp = replayHandler.getReplaySender().currentTimeStamp() / 1000f % 3600f;

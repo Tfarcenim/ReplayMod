@@ -6,21 +6,21 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(Particle.class)
 public interface ParticleAccessor {
-    @Accessor
+    @Accessor("xo")
     double getPrevPosX();
 
-    @Accessor
+    @Accessor("yo")
     double getPrevPosY();
 
-    @Accessor
+    @Accessor("zo")
     double getPrevPosZ();
 
-    @Accessor
+    @Accessor("x")
     double getPosX();
 
-    @Accessor
+    @Accessor("y")
     double getPosY();
 
-    @Accessor
+    @Accessor("z")
     double getPosZ();
 }

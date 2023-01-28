@@ -24,7 +24,7 @@
  */
 package com.replaymod.gui.element;
 
-public class GuiTooltip extends AbstractGuiTooltip<GuiTooltip> {
+public class GuiTooltip extends GuiComponentTooltip<GuiTooltip> {
     @Override
     protected GuiTooltip getThis() {
         return this;

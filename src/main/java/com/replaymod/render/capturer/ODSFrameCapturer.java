@@ -1,5 +1,6 @@
 package com.replaymod.render.capturer;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.replaymod.gui.utils.EventRegistrations;
 import com.replaymod.render.RenderSettings;
 import com.replaymod.render.frame.CubicOpenGlFrame;
@@ -11,16 +12,17 @@ import com.replaymod.render.rendering.Channel;
 import com.replaymod.render.rendering.FrameCapturer;
 import com.replaymod.render.shader.Program;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
-import net.minecraft.crash.CrashReport;
-import net.minecraft.crash.ReportedException;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.CrashReport;
+import net.minecraft.ReportedException;
+import net.minecraft.resources.ResourceLocation;
+import org.lwjgl.opengl.GL11;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.mojang.blaze3d.platform.GlStateManager.*;
-import static com.replaymod.core.versions.MCVer.resizeMainWindow;
+import static com.mojang.blaze3d.systems.RenderSystem.clear;
+import static com.replaymod.core.versions.MCVer.resizeWindow;
 import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
 
@@ -35,7 +37,7 @@ public class ODSFrameCapturer implements FrameCapturer<ODSOpenGlFrame> {
 
     private EventRegistrations renderStateEvents;
 
-    public ODSFrameCapturer(WorldRenderer worldRenderer, final RenderInfo renderInfo, int frameSize) {
+    public ODSFrameCapturer(LevelRenderer levelRenderer, final RenderInfo renderInfo, int frameSize) {
         RenderInfo fakeInfo = new RenderInfo() {
             private int call;
             private float partialTicks;
@@ -70,14 +72,14 @@ public class ODSFrameCapturer implements FrameCapturer<ODSOpenGlFrame> {
                 return renderInfo.getRenderSettings();
             }
         };
-        left = new CubicStereoFrameCapturer(worldRenderer, fakeInfo, frameSize);
-        right = new CubicStereoFrameCapturer(worldRenderer, fakeInfo, frameSize);
+        left = new CubicStereoFrameCapturer(levelRenderer, fakeInfo, frameSize);
+        right = new CubicStereoFrameCapturer(levelRenderer, fakeInfo, frameSize);
         try {
             shaderProgram = new Program(vertexResource, fragmentResource);
             leftEyeVariable = shaderProgram.getUniformVariable("leftEye");
             directionVariable = shaderProgram.getUniformVariable("direction");
         } catch (Exception e) {
-            throw new ReportedException(CrashReport.makeCrashReport(e, "Creating ODS shaders"));
+            throw new ReportedException(CrashReport.forThrowable(e, "Creating ODS shaders"));
         }
     }
 
@@ -150,27 +152,27 @@ public class ODSFrameCapturer implements FrameCapturer<ODSOpenGlFrame> {
     }
 
     private class CubicStereoFrameCapturer extends CubicPboOpenGlFrameCapturer {
-        public CubicStereoFrameCapturer(WorldRenderer worldRenderer, RenderInfo renderInfo, int frameSize) {
-            super(worldRenderer, renderInfo, frameSize);
+        public CubicStereoFrameCapturer(LevelRenderer levelRenderer, RenderInfo renderInfo, int frameSize) {
+            super(levelRenderer, renderInfo, frameSize);
         }
 
         @Override
         protected OpenGlFrame renderFrame(int frameId, float partialTicks, CubicOpenGlFrameCapturer.Data captureData) {
-            resizeMainWindow(mc, getFrameWidth(), getFrameHeight());
+            resizeWindow(mc, getFrameWidth(), getFrameHeight());
 
-            pushMatrix();
-            frameBuffer().bindFramebuffer(true);
+            GL11.glPushMatrix();
+            frameBuffer().bindWrite(true);
 
-            clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
+            RenderSystem.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
                     , false
             );
-            enableTexture();
+            RenderSystem.enableTexture();
 
             directionVariable.set(captureData.ordinal());
-            worldRenderer.renderWorld(partialTicks, null);
+            levelRenderer.renderWorld(partialTicks, null);
 
-            frameBuffer().unbindFramebuffer();
-            popMatrix();
+            frameBuffer().unbindWrite();
+            GL11.glPopMatrix();
 
             return captureFrame(frameId, captureData);
         }

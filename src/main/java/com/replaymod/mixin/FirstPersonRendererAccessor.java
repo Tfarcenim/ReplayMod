@@ -1,27 +1,27 @@
 package com.replaymod.mixin;
 
-import net.minecraft.client.renderer.FirstPersonRenderer;
-import net.minecraft.item.ItemStack;
+import net.minecraft.client.renderer.ItemInHandRenderer;
+import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mixin(FirstPersonRenderer.class)
+@Mixin(ItemInHandRenderer.class)
 public interface FirstPersonRendererAccessor {
-    @Accessor
+    @Accessor("mainHandItem")
     void setItemStackMainHand(ItemStack value);
 
-    @Accessor
+    @Accessor("mainHandItem")
     void setItemStackOffHand(ItemStack value);
 
-    @Accessor
+    @Accessor("mainHandHeight")
     void setEquippedProgressMainHand(float value);
 
-    @Accessor
+    @Accessor("oMainHandHeight")
     void setPrevEquippedProgressMainHand(float value);
 
-    @Accessor
+    @Accessor("offHandHeight")
     void setEquippedProgressOffHand(float value);
 
-    @Accessor
+    @Accessor("oOffHandHeight")
     void setPrevEquippedProgressOffHand(float value);
 }

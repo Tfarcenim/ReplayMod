@@ -15,7 +15,7 @@ import com.replaymod.gui.function.Typeable;
 import com.replaymod.gui.layout.CustomLayout;
 import com.replaymod.gui.layout.GridLayout;
 import com.replaymod.gui.layout.HorizontalLayout;
-import com.replaymod.gui.popup.AbstractGuiPopup;
+import com.replaymod.gui.popup.GuiComponentPopup;
 import com.replaymod.gui.utils.Colors;
 import com.replaymod.render.FFmpegWriter;
 import com.replaymod.render.RenderSettings;
@@ -32,9 +32,9 @@ import de.johni0702.minecraft.gui.utils.lwjgl.Dimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.AlertScreen;
-import net.minecraft.crash.CrashReport;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.screens.AlertScreen;
+import net.minecraft.CrashReport;
+import net.minecraft.network.chat.TranslatableComponent;
 import org.apache.commons.io.IOUtils;
 
 import java.io.File;
@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
 
 import static com.replaymod.render.ReplayModRender.LOGGER;
 
-public class GuiRenderQueue extends AbstractGuiPopup<GuiRenderQueue> implements Typeable {
+public class GuiRenderQueue extends GuiComponentPopup<GuiRenderQueue> implements Typeable {
     private final GuiLabel title = new GuiLabel().setI18nText("replaymod.gui.renderqueue.title").setColor(Colors.BLACK);
     private final GuiVerticalList list = new GuiVerticalList().setDrawShadow(true).setDrawSlider(true);
     private final GuiButton addButton = new GuiButton().setI18nLabel("replaymod.gui.renderqueue.add").setSize(150, 20);
@@ -72,7 +72,7 @@ public class GuiRenderQueue extends AbstractGuiPopup<GuiRenderQueue> implements 
                             editButton, removeButton),
                     closeButton);
 
-    private final AbstractGuiScreen<?> container;
+    private final GuiComponentScreen<?> container;
     private final ReplayHandler replayHandler;
     private final Set<Entry> selectedEntries = new HashSet<>();
     private final Supplier<Timeline> timelineSupplier;
@@ -100,7 +100,7 @@ public class GuiRenderQueue extends AbstractGuiPopup<GuiRenderQueue> implements 
     private final ReplayModRender mod = ReplayModRender.instance;
     private final List<RenderJob> jobs = mod.getRenderQueue();
 
-    public GuiRenderQueue(AbstractGuiScreen<?> container, ReplayHandler replayHandler, Supplier<Timeline> timelineSupplier) {
+    public GuiRenderQueue(GuiComponentScreen<?> container, ReplayHandler replayHandler, Supplier<Timeline> timelineSupplier) {
         super(container);
         this.container = container;
         this.replayHandler = replayHandler;
@@ -153,11 +153,11 @@ public class GuiRenderQueue extends AbstractGuiPopup<GuiRenderQueue> implements 
         updateButtons();
     }
 
-    private static void processQueue(AbstractGuiScreen<?> container, ReplayHandler replayHandler, Iterable<RenderJob> queue, Runnable done) {
+    private static void processQueue(GuiComponentScreen<?> container, ReplayHandler replayHandler, Iterable<RenderJob> queue, Runnable done) {
         Minecraft mc = MCVer.getMinecraft();
 
         // Close all GUIs (so settings in GuiRenderSettings are saved)
-        mc.displayGuiScreen(null);
+        mc.setScreen(null);
         // Start rendering
         int jobsDone = 0;
         for (RenderJob renderJob : queue) {
@@ -169,10 +169,10 @@ public class GuiRenderQueue extends AbstractGuiPopup<GuiRenderQueue> implements 
                 LOGGER.error("Rendering video:", e);
                 AlertScreen errorScreen = new AlertScreen(
                         container::display,
-                        new TranslationTextComponent("replaymod.gui.rendering.error.title"),
-                        new TranslationTextComponent("replaymod.gui.rendering.error.message")
+                        new TranslatableComponent("replaymod.gui.rendering.error.title"),
+                        new TranslatableComponent("replaymod.gui.rendering.error.message")
                 );
-                mc.displayGuiScreen(errorScreen);
+                mc.setScreen(errorScreen);
                 return;
             } catch (FFmpegWriter.FFmpegStartupException e) {
                 int jobsToSkip = jobsDone;
@@ -184,7 +184,7 @@ public class GuiRenderQueue extends AbstractGuiPopup<GuiRenderQueue> implements 
                 });
                 return;
             } catch (Throwable t) {
-                Utils.error(LOGGER, container, CrashReport.makeCrashReport(t, "Rendering video"), () -> {
+                Utils.error(LOGGER, container, CrashReport.forThrowable(t, "Rendering video"), () -> {
                 });
                 container.display(); // Re-show the queue popup and the new error popup
                 return;
@@ -195,7 +195,7 @@ public class GuiRenderQueue extends AbstractGuiPopup<GuiRenderQueue> implements 
     }
 
     public static void processMultipleReplays(
-            AbstractGuiScreen<?> container,
+            GuiComponentScreen<?> container,
             ReplayModReplay mod,
             Iterator<Pair<File, List<RenderJob>>> queue,
             Runnable done
@@ -213,7 +213,7 @@ public class GuiRenderQueue extends AbstractGuiPopup<GuiRenderQueue> implements 
             replayFile = mod.getCore().openReplay(next.getKey().toPath());
             replayHandler = mod.startReplay(replayFile, true, false);
         } catch (IOException e) {
-            Utils.error(LOGGER, container, CrashReport.makeCrashReport(e, "Opening replay"), () -> {
+            Utils.error(LOGGER, container, CrashReport.forThrowable(e, "Opening replay"), () -> {
             });
             container.display(); // Re-show the queue popup and the new error popup
             IOUtils.closeQuietly(replayFile);
@@ -229,11 +229,11 @@ public class GuiRenderQueue extends AbstractGuiPopup<GuiRenderQueue> implements 
 
         Minecraft mc = mod.getCore().getMinecraft();
         int jumpTo = 1000;
-        while (mc.world == null && jumpTo < replayHandler.getReplayDuration()) {
+        while (mc.level == null && jumpTo < replayHandler.getReplayDuration()) {
             replaySender.sendPacketsTill(jumpTo);
             jumpTo += 1000;
         }
-        if (mc.world == null) {
+        if (mc.level == null) {
             LOGGER.warn("Replay failed to load world (corrupted?), skipping..");
             IOUtils.closeQuietly(replayFile);
             processMultipleReplays(container, mod, queue, done);
@@ -244,7 +244,7 @@ public class GuiRenderQueue extends AbstractGuiPopup<GuiRenderQueue> implements 
             try {
                 replayHandler.endReplay();
             } catch (IOException e) {
-                Utils.error(LOGGER, container, CrashReport.makeCrashReport(e, "Closing replay"), () -> {
+                Utils.error(LOGGER, container, CrashReport.forThrowable(e, "Closing replay"), () -> {
                 });
                 container.display(); // Re-show the queue popup and the new error popup
                 return;
@@ -358,7 +358,7 @@ public class GuiRenderQueue extends AbstractGuiPopup<GuiRenderQueue> implements 
         return false;
     }
 
-    public class Entry extends AbstractGuiClickableContainer<Entry> {
+    public class Entry extends GuiComponentClickableContainer<Entry> {
         public final GuiLabel label = new GuiLabel(this);
         public final RenderJob job;
 

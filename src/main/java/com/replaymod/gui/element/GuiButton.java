@@ -26,7 +26,7 @@ package com.replaymod.gui.element;
 
 import com.replaymod.gui.container.GuiContainer;
 
-public class GuiButton extends AbstractGuiButton<GuiButton> {
+public class GuiButton extends GuiComponentButton<GuiButton> {
     public GuiButton() {
     }
 

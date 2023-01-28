@@ -5,10 +5,10 @@ import de.johni0702.minecraft.gui.utils.lwjgl.vector.Matrix4f;
 import de.johni0702.minecraft.gui.utils.lwjgl.vector.Quaternion;
 import de.johni0702.minecraft.gui.utils.lwjgl.vector.Vector3f;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GLAllocation;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.vector.Vector3d;
+import com.mojang.blaze3d.platform.MemoryTracker;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.Vec3;
 import org.blender.dna.Link;
 import org.blender.dna.ListBase;
 import org.blender.utils.BlenderFactory;
@@ -36,7 +36,7 @@ public class Util {
         }
     }
 
-    private static FloatBuffer floatBuffer = GLAllocation.createDirectFloatBuffer(16);
+    private static FloatBuffer floatBuffer = MemoryTracker.create(16).asFloatBuffer();
 
     public static Matrix4f getGlMatrix(int matrix) {
         floatBuffer.clear();
@@ -65,7 +65,9 @@ public class Util {
     }
 
     public static Vector3f scaleFromMat(Matrix4f mat, Vector3f scale) {
-        if (scale == null) scale = new Vector3f();
+        if (scale == null) {
+            scale = new Vector3f();
+        }
         scale.set(
                 new Vector3f(mat.m00, mat.m01, mat.m02).length(),
                 new Vector3f(mat.m10, mat.m11, mat.m12).length(),
@@ -100,7 +102,9 @@ public class Util {
     }
 
     public static Vector3f posFromMat(Matrix4f mat, Vector3f pos) {
-        if (pos == null) pos = new Vector3f();
+        if (pos == null) {
+            pos = new Vector3f();
+        }
         pos.set(mat.m30, mat.m31, mat.m32);
         return pos;
     }
@@ -132,12 +136,14 @@ public class Util {
 
     public static Vector3f getCameraPos() {
         Minecraft mc = Minecraft.getInstance();
-        Vector3d pos = mc.getRenderManager().info.getProjectedView();
+        Vec3 pos = mc.getEntityRenderDispatcher().camera.getPosition();
         return new Vector3f((float) pos.x, (float) pos.y, (float) pos.z);
     }
 
     public static Vector3f rotate(Quaternion rot, Vector3f vec, Vector3f dest) {
-        if (dest == null) dest = new Vector3f();
+        if (dest == null) {
+            dest = new Vector3f();
+        }
         Quaternion vecQ = new Quaternion(vec.x, vec.y, vec.z, 0);
         Quaternion.mul(rot, vecQ, vecQ);
         Quaternion.mulInverse(vecQ, rot, vecQ);
@@ -166,9 +172,9 @@ public class Util {
         }
     }
 
-    public static String getTileEntityId(TileEntity tileEntity) {
-        CompoundNBT nbt = new CompoundNBT();
-        tileEntity.write(nbt);
+    public static String getBlockEntityId(BlockEntity tileEntity) {
+        CompoundTag nbt = new CompoundTag();
+        tileEntity.saveId(nbt);
         return nbt.getString("id");
     }
 

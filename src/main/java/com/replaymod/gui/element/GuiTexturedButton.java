@@ -26,7 +26,7 @@ package com.replaymod.gui.element;
 
 import com.replaymod.gui.container.GuiContainer;
 
-public class GuiTexturedButton extends AbstractGuiTexturedButton<GuiTexturedButton> {
+public class GuiTexturedButton extends GuiComponentTexturedButton<GuiTexturedButton> {
     public GuiTexturedButton() {
     }
 

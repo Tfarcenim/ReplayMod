@@ -1,6 +1,6 @@
 package com.replaymod.simplepathing.preview;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.*;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.replaymod.core.ReplayMod;
@@ -21,11 +21,8 @@ import com.replaymod.simplepathing.ReplayModSimplePathing;
 import com.replaymod.simplepathing.SPTimeline;
 import com.replaymod.simplepathing.gui.GuiPathing;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.lwjgl.opengl.GL11;
@@ -55,41 +52,51 @@ public class PathPreviewRenderer extends EventRegistrations {
         on(PostRenderWorldCallback.EVENT, this::renderCameraPath);
     }
 
-    private void renderCameraPath(MatrixStack matrixStack) {
-        if (!replayHandler.getReplaySender().isAsyncMode() || mc.gameSettings.hideGUI) return;
+    private void renderCameraPath(PoseStack matrixStack) {
+        if (!replayHandler.getReplaySender().isAsyncMode() || mc.options.hideGui) {
+            return;
+        }
 
-        Entity view = mc.getRenderViewEntity();
-        if (view == null) return;
+        Entity view = mc.getCameraEntity();
+        if (view == null) {
+            return;
+        }
 
         GuiPathing guiPathing = mod.getGuiPathing();
-        if (guiPathing == null) return;
+        if (guiPathing == null) {
+            return;
+        }
         EntityPositionTracker entityTracker = guiPathing.getEntityTracker();
 
         SPTimeline timeline = mod.getCurrentTimeline();
-        if (timeline == null) return;
+        if (timeline == null) {
+            return;
+        }
         Path path = timeline.getPositionPath();
-        if (path.getKeyframes().isEmpty()) return;
+        if (path.getKeyframes().isEmpty()) {
+            return;
+        }
         Path timePath = timeline.getTimePath();
 
         path.update();
 
-        int renderDistance = mc.gameSettings.renderDistanceChunks * 16;
+        int renderDistance = mc.options.renderDistance * 16;
         int renderDistanceSquared = renderDistance * renderDistance;
 
         Triple<Double, Double, Double> viewPos = Triple.of(
-                view.getPosX(),
-                view.getPosY()
+                view.getX(),
+                view.getY()
                 ,
-                view.getPosZ()
+                view.getZ()
         );
 
         GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
-        GL11.glPushMatrix();
+        matrixStack.pushPose();
         try {
             GL11.glDisable(GL11.GL_LIGHTING);
             GL11.glDisable(GL11.GL_TEXTURE_2D);
 
-            RenderSystem.multMatrix(matrixStack.getLast().getMatrix());
+            //RenderSystem.multMatrix(matrixStack.getLast().getMatrix());
 
             for (PathSegment segment : path.getSegments()) {
                 Interpolator interpolator = segment.getInterpolator();
@@ -179,8 +186,8 @@ public class PathPreviewRenderer extends EventRegistrations {
                 }
             }
         } finally {
-            GL11.glPopMatrix();
-            GlStateManager.popAttributes();
+            matrixStack.popPose();
+            GL11.glPopAttrib();
         }
     }
 
@@ -205,14 +212,18 @@ public class PathPreviewRenderer extends EventRegistrations {
                                 Triple<Double, Double, Double> pos1,
                                 Triple<Double, Double, Double> pos2,
                                 int color, int renderDistanceSquared) {
-        if (distanceSquared(view, pos1) > renderDistanceSquared) return;
-        if (distanceSquared(view, pos2) > renderDistanceSquared) return;
+        if (distanceSquared(view, pos1) > renderDistanceSquared) {
+            return;
+        }
+        if (distanceSquared(view, pos2) > renderDistanceSquared) {
+            return;
+        }
 
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder buffer = tessellator.getBuffer();
-        buffer.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
+        Tesselator tessellator = Tesselator.getInstance();
+        BufferBuilder buffer = tessellator.getBuilder();
+        buffer.begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION_COLOR);
 
-        buffer.pos(
+        buffer.vertex(
                 pos1.getLeft() - view.getLeft(),
                 pos1.getMiddle() - view.getMiddle(),
                 pos1.getRight() - view.getRight()
@@ -222,7 +233,7 @@ public class PathPreviewRenderer extends EventRegistrations {
                 color & 0xff,
                 255
         ).endVertex();
-        buffer.pos(
+        buffer.vertex(
                 pos2.getLeft() - view.getLeft(),
                 pos2.getMiddle() - view.getMiddle(),
                 pos2.getRight() - view.getRight()
@@ -234,14 +245,14 @@ public class PathPreviewRenderer extends EventRegistrations {
         ).endVertex();
 
         GL11.glLineWidth(3);
-        tessellator.draw();
+        tessellator.end();
     }
 
     private void drawPoint(Triple<Double, Double, Double> view,
                            Triple<Double, Double, Double> pos,
                            Keyframe keyframe) {
 
-        mc.getTextureManager().bindTexture(TEXTURE);
+        mc.getTextureManager().bindForSetup(TEXTURE);
 
         float posX = 80f / ReplayMod.TEXTURE_SIZE;
         float posY = 0f;
@@ -260,14 +271,14 @@ public class PathPreviewRenderer extends EventRegistrations {
         float maxX = 0.5f;
         float maxY = 0.5f;
 
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder buffer = tessellator.getBuffer();
-        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
+        Tesselator tessellator = Tesselator.getInstance();
+        BufferBuilder buffer = tessellator.getBuilder();
+        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
 
-        buffer.pos(minX, minY, 0).tex(posX + size, posY + size).endVertex();
-        buffer.pos(minX, maxY, 0).tex(posX + size, posY).endVertex();
-        buffer.pos(maxX, maxY, 0).tex(posX, posY).endVertex();
-        buffer.pos(maxX, minY, 0).tex(posX, posY + size).endVertex();
+        buffer.vertex(minX, minY, 0).uv(posX + size, posY + size).endVertex();
+        buffer.vertex(minX, maxY, 0).uv(posX + size, posY).endVertex();
+        buffer.vertex(maxX, maxY, 0).uv(posX, posY).endVertex();
+        buffer.vertex(maxX, minY, 0).uv(posX, posY + size).endVertex();
 
         GL11.glPushMatrix();
 
@@ -277,10 +288,10 @@ public class PathPreviewRenderer extends EventRegistrations {
                 pos.getRight() - view.getRight()
         );
         GL11.glNormal3f(0, 1, 0);
-        GL11.glRotatef(-mc.getRenderManager().info.getYaw(), 0, 1, 0);
-        GL11.glRotatef(mc.getRenderManager().info.getPitch(), 1, 0, 0);
+        GL11.glRotatef(-mc.getEntityRenderDispatcher().camera.getXRot(), 0, 1, 0);
+        GL11.glRotatef(mc.getEntityRenderDispatcher().camera.getYRot(), 1, 0, 0);
 
-        tessellator.draw();
+        tessellator.end();
 
         GL11.glPopMatrix();
     }
@@ -289,7 +300,7 @@ public class PathPreviewRenderer extends EventRegistrations {
                             Triple<Double, Double, Double> pos,
                             Triple<Float, Float, Float> rot) {
 
-        mc.getTextureManager().bindTexture(CAMERA_HEAD);
+        mc.getTextureManager().bindForSetup(CAMERA_HEAD);
 
         GL11.glPushMatrix();
 
@@ -305,14 +316,14 @@ public class PathPreviewRenderer extends EventRegistrations {
 
         //draw the position line
         GL11.glDisable(GL11.GL_TEXTURE_2D);
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder buffer = tessellator.getBuffer();
-        buffer.begin(GL11.GL_LINES, DefaultVertexFormats.POSITION_COLOR);
+        Tesselator tessellator = Tesselator.getInstance();
+        BufferBuilder buffer = tessellator.getBuilder();
+        buffer.begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION_COLOR);
 
-        buffer.pos(0, 0, 0).color(0, 255, 0, 170).endVertex();
-        buffer.pos(0, 0, 2).color(0, 255, 0, 170).endVertex();
+        buffer.vertex(0, 0, 0).color(0, 255, 0, 170).endVertex();
+        buffer.vertex(0, 0, 2).color(0, 255, 0, 170).endVertex();
 
-        tessellator.draw();
+        tessellator.end();
 
         // draw camera cube
         GL11.glEnable(GL11.GL_TEXTURE_2D);
@@ -321,45 +332,45 @@ public class PathPreviewRenderer extends EventRegistrations {
 
         double r = -cubeSize / 2;
 
-        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
+        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
 
         //back
-        buffer.pos(r, r + cubeSize, r).tex(3 * 8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
-        buffer.pos(r + cubeSize, r + cubeSize, r).tex(4 * 8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
-        buffer.pos(r + cubeSize, r, r).tex(4 * 8 / 64f, 2 * 8 / 64f).color(255, 255, 255, 200).endVertex();
-        buffer.pos(r, r, r).tex(3 * 8 / 64f, 2 * 8 / 64f).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r, r + cubeSize, r).uv(3 * 8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r + cubeSize, r + cubeSize, r).uv(4 * 8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r + cubeSize, r, r).uv(4 * 8 / 64f, 2 * 8 / 64f).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r, r, r).uv(3 * 8 / 64f, 2 * 8 / 64f).color(255, 255, 255, 200).endVertex();
 
         //front
-        buffer.pos(r + cubeSize, r, r + cubeSize).tex(2 * 8 / 64f, 2 * 8 / 64f).color(255, 255, 255, 200).endVertex();
-        buffer.pos(r + cubeSize, r + cubeSize, r + cubeSize).tex(2 * 8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
-        buffer.pos(r, r + cubeSize, r + cubeSize).tex(8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
-        buffer.pos(r, r, r + cubeSize).tex(8 / 64f, 2 * 8 / 64f).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r + cubeSize, r, r + cubeSize).uv(2 * 8 / 64f, 2 * 8 / 64f).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r + cubeSize, r + cubeSize, r + cubeSize).uv(2 * 8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r, r + cubeSize, r + cubeSize).uv(8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r, r, r + cubeSize).uv(8 / 64f, 2 * 8 / 64f).color(255, 255, 255, 200).endVertex();
 
         //left
-        buffer.pos(r + cubeSize, r + cubeSize, r).tex(0, 8 / 64f).color(255, 255, 255, 200).endVertex();
-        buffer.pos(r + cubeSize, r + cubeSize, r + cubeSize).tex(8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
-        buffer.pos(r + cubeSize, r, r + cubeSize).tex(8 / 64f, 2 * 8 / 64f).color(255, 255, 255, 200).endVertex();
-        buffer.pos(r + cubeSize, r, r).tex(0, 2 * 8 / 64f).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r + cubeSize, r + cubeSize, r).uv(0, 8 / 64f).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r + cubeSize, r + cubeSize, r + cubeSize).uv(8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r + cubeSize, r, r + cubeSize).uv(8 / 64f, 2 * 8 / 64f).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r + cubeSize, r, r).uv(0, 2 * 8 / 64f).color(255, 255, 255, 200).endVertex();
 
         //right
-        buffer.pos(r, r + cubeSize, r + cubeSize).tex(2 * 8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
-        buffer.pos(r, r + cubeSize, r).tex(3 * 8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
-        buffer.pos(r, r, r).tex(3 * 8 / 64f, 2 * 8 / 64f).color(255, 255, 255, 200).endVertex();
-        buffer.pos(r, r, r + cubeSize).tex(2 * 8 / 64f, 2 * 8 / 64f).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r, r + cubeSize, r + cubeSize).uv(2 * 8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r, r + cubeSize, r).uv(3 * 8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r, r, r).uv(3 * 8 / 64f, 2 * 8 / 64f).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r, r, r + cubeSize).uv(2 * 8 / 64f, 2 * 8 / 64f).color(255, 255, 255, 200).endVertex();
 
         //bottom
-        buffer.pos(r + cubeSize, r, r).tex(3 * 8 / 64f, 0).color(255, 255, 255, 200).endVertex();
-        buffer.pos(r + cubeSize, r, r + cubeSize).tex(3 * 8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
-        buffer.pos(r, r, r + cubeSize).tex(2 * 8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
-        buffer.pos(r, r, r).tex(2 * 8 / 64f, 0).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r + cubeSize, r, r).uv(3 * 8 / 64f, 0).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r + cubeSize, r, r + cubeSize).uv(3 * 8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r, r, r + cubeSize).uv(2 * 8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r, r, r).uv(2 * 8 / 64f, 0).color(255, 255, 255, 200).endVertex();
 
         //top
-        buffer.pos(r, r + cubeSize, r).tex(8 / 64f, 0).color(255, 255, 255, 200).endVertex();
-        buffer.pos(r, r + cubeSize, r + cubeSize).tex(8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
-        buffer.pos(r + cubeSize, r + cubeSize, r + cubeSize).tex(2 * 8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
-        buffer.pos(r + cubeSize, r + cubeSize, r).tex(2 * 8 / 64f, 0).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r, r + cubeSize, r).uv(8 / 64f, 0).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r, r + cubeSize, r + cubeSize).uv(8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r + cubeSize, r + cubeSize, r + cubeSize).uv(2 * 8 / 64f, 8 / 64f).color(255, 255, 255, 200).endVertex();
+        buffer.vertex(r + cubeSize, r + cubeSize, r).uv(2 * 8 / 64f, 0).color(255, 255, 255, 200).endVertex();
 
-        tessellator.draw();
+        tessellator.end();
 
         GL11.glPopMatrix();
     }

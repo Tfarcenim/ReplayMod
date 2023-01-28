@@ -24,7 +24,7 @@
  */
 package com.replaymod.gui.container;
 
-public class GuiScrollable extends AbstractGuiScrollable<GuiScrollable> {
+public class GuiScrollable extends GuiComponentScrollable<GuiScrollable> {
     public GuiScrollable() {
     }
 

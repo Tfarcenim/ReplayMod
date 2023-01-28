@@ -25,27 +25,27 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.RemoteClientPlayerEntity;
-import net.minecraft.client.gui.screen.AlertScreen;
-import net.minecraft.client.gui.screen.DownloadTerrainScreen;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.IPacket;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.network.PacketDirection;
-import net.minecraft.network.ProtocolType;
-import net.minecraft.network.login.server.SLoginSuccessPacket;
-import net.minecraft.network.play.server.*;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.world.GameType;
-import net.minecraft.world.chunk.AbstractChunkProvider;
-import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.lighting.WorldLightManager;
+import net.minecraft.client.player.RemotePlayer;
+import net.minecraft.client.gui.screens.AlertScreen;
+import net.minecraft.client.gui.screens.ReceivingLevelScreen;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.ConnectionProtocol;
+import net.minecraft.network.protocol.login.ClientboundGameProfilePacket;
+//import net.minecraft.network.play.server.*;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.chunk.ChunkSource;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.lighting.LevelLightEngine;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
@@ -54,6 +54,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
+
+import net.minecraft.network.protocol.game.*;
 
 import static com.replaymod.core.versions.MCVer.*;
 import static com.replaymod.replaystudio.util.Utils.readInt;
@@ -69,23 +71,23 @@ public class FullReplaySender extends ChannelDuplexHandler implements ReplaySend
      * These packets are ignored completely during replay.
      */
     private static final List<Class> BAD_PACKETS = Arrays.<Class>asList(
-            SPlayerDiggingPacket.class,
-            SOpenBookWindowPacket.class,
-            SOpenWindowPacket.class,
-            SUpdateRecipesPacket.class,
-            SAdvancementInfoPacket.class,
-            SSelectAdvancementsTabPacket.class,
-            SCameraPacket.class,
-            STitlePacket.class,
-            SUpdateHealthPacket.class,
-            SOpenHorseWindowPacket.class,
-            SCloseWindowPacket.class,
-            SSetSlotPacket.class,
-            SWindowPropertyPacket.class,
-            SOpenSignMenuPacket.class,
-            SStatisticsPacket.class,
-            SSetExperiencePacket.class,
-            SPlayerAbilitiesPacket.class
+            ClientboundBlockBreakAckPacket.class,
+            ClientboundOpenBookPacket.class,
+            ClientboundOpenScreenPacket.class,
+            ClientboundUpdateRecipesPacket.class,
+            ClientboundUpdateAdvancementsPacket.class,
+            ClientboundSelectAdvancementsTabPacket.class,
+            ClientboundSetCameraPacket.class,
+            ClientboundSetTitleTextPacket.class,
+            ClientboundSetHealthPacket.class,
+            ClientboundHorseScreenOpenPacket.class,
+            ClientboundContainerClosePacket.class,
+            ClientboundContainerSetSlotPacket.class,
+            ClientboundContainerSetDataPacket.class,
+            ClientboundOpenSignEditorPacket.class,
+            ClientboundAwardStatsPacket.class,
+            ClientboundSetExperiencePacket.class,
+            ClientboundPlayerAbilitiesPacket.class
     );
 
     private static int TP_DISTANCE_LIMIT = 128;
@@ -294,11 +296,11 @@ public class FullReplaySender extends ChannelDuplexHandler implements ReplaySend
             // Entity#addedToChunk is not set and it is therefore not updated every tick.
             // To counteract this, we need to manually update it's position if it hasn't been added
             // to any chunk yet.
-            if (mc.world != null) {
-                for (PlayerEntity playerEntity : mc.world.getPlayers()) {
-                    if (!playerEntity.addedToChunk && playerEntity instanceof RemoteClientPlayerEntity) {
-                        playerEntity.livingTick();
-                    }
+            if (mc.level != null) {
+                for (Player playerEntity : mc.level.players()) {
+                    /*if (!playerEntity.addedToChunk && playerEntity instanceof RemotePlayer) {
+                        playerEntity.aiStep();
+                    }*/
                 }
             }
         }
@@ -313,20 +315,20 @@ public class FullReplaySender extends ChannelDuplexHandler implements ReplaySend
         }
 
         // When a packet is sent directly, perform no filtering
-        if (msg instanceof IPacket) {
+        if (msg instanceof Packet) {
             super.channelRead(ctx, msg);
         }
 
         if (msg instanceof byte[]) {
             try {
-                IPacket deserialized = deserializePacket((byte[]) msg);
+                Packet deserialized = deserializePacket((byte[]) msg);
 
                 if (deserialized == null) {
                     System.out.println("Failed to deserialize a packet to send. loginPhase: " + loginPhase);
                     return;
                 }
 
-                IPacket processed = processPacket(deserialized);
+                Packet processed = processPacket(deserialized);
 
                 if (processed != null) {
                     // System.out.println("Processing a packet. Class: " + processed.getClass().toString());
@@ -336,32 +338,32 @@ public class FullReplaySender extends ChannelDuplexHandler implements ReplaySend
                 // If we do not give minecraft time to tick, there will be dead entity artifacts left in the world
                 // Therefore we have to remove all loaded, dead entities manually if we are in sync mode.
                 // We do this after every SpawnX packet and after the destroy entities packet.
-                if (!asyncMode && mc.world != null) {
-                    if (processed instanceof SSpawnPlayerPacket
-                            || processed instanceof SSpawnObjectPacket
-                            || processed instanceof SSpawnMobPacket
-                            || processed instanceof SSpawnPaintingPacket
-                            || processed instanceof SSpawnExperienceOrbPacket
-                            || processed instanceof SDestroyEntitiesPacket) {
-                        ClientWorld world = mc.world;
+                if (!asyncMode && mc.level != null) {
+                    if (processed instanceof ClientboundAddPlayerPacket
+                            || processed instanceof ClientboundAddEntityPacket
+                            || processed instanceof ClientboundAddMobPacket
+                            || processed instanceof ClientboundAddPaintingPacket
+                            || processed instanceof ClientboundAddExperienceOrbPacket
+                            || processed instanceof ClientboundRemoveEntitiesPacket) {
+                        ClientLevel world = mc.level;
                         // Note: Not sure if it's still required but there's this really handy method anyway
-                        world.removeAllEntities();
+                        //world.removeAllPendingEntityRemovals();
                     }
                 }
 
-                if (processed instanceof SChunkDataPacket) {
+                if (processed instanceof ClientboundForgetLevelChunkPacket || processed instanceof ClientboundLevelChunkWithLightPacket) {
                     Runnable doLightUpdates = () -> {
-                        if (mc.world != null) {
-                            WorldLightManager provider = mc.world.getChunkProvider().getLightManager();
+                        if (mc.level != null) {
+                            LevelLightEngine provider = mc.level.getChunkSource().getLightEngine();
                             while (provider.hasLightWork()) {
-                                provider.tick(Integer.MAX_VALUE, true, true);
+                                provider.runUpdates(Integer.MAX_VALUE, true, true);
                             }
                         }
                     };
-                    if (mc.isOnExecutionThread()) {
+                    if (mc.isSameThread()) {
                         doLightUpdates.run();
                     } else {
-                        mc.enqueue(doLightUpdates);
+                        mc.execute(doLightUpdates);
                     }
                 }
             } catch (Exception e) {
@@ -372,16 +374,16 @@ public class FullReplaySender extends ChannelDuplexHandler implements ReplaySend
 
     }
 
-    private IPacket deserializePacket(byte[] bytes) {
+    private Packet deserializePacket(byte[] bytes) {
         try {
             ByteBuf bb = Unpooled.wrappedBuffer(bytes);
-            PacketBuffer pb = new PacketBuffer(bb);
+            FriendlyByteBuf pb = new FriendlyByteBuf(bb);
 
             int i = pb.readVarInt();
 
-            ProtocolType state = loginPhase ? ProtocolType.LOGIN : ProtocolType.PLAY;
-            IPacket p = state.getPacket(PacketDirection.CLIENTBOUND, i);
-            p.readPacketData(pb);
+            ConnectionProtocol state = loginPhase ? ConnectionProtocol.LOGIN : ConnectionProtocol.PLAY;
+            Packet p = state.createPacket(PacketFlow.CLIENTBOUND, i,pb);
+            //p.readPacketData(pb);
 
             return p;
         } catch (Exception e) {
@@ -396,15 +398,15 @@ public class FullReplaySender extends ChannelDuplexHandler implements ReplaySend
      * @param p The packet to process
      * @return The processed packet or {@code null} if no packet shall be sent
      */
-    protected IPacket processPacket(IPacket p) throws Exception {
-        if (p instanceof SLoginSuccessPacket) {
+    protected Packet processPacket(Packet p) throws Exception {
+        if (p instanceof ClientboundGameProfilePacket) {
             loginPhase = false;
             return p;
         }
 
-        if (p instanceof SCustomPayloadPlayPacket) {
-            SCustomPayloadPlayPacket packet = (SCustomPayloadPlayPacket) p;
-            if (Restrictions.PLUGIN_CHANNEL.equals(packet.getChannelName())) {
+        if (p instanceof ClientboundCustomPayloadPacket) {
+            ClientboundCustomPayloadPacket packet = (ClientboundCustomPayloadPacket) p;
+            if (Restrictions.PLUGIN_CHANNEL.equals(packet.getIdentifier())) {
                 final String unknown = replayHandler.getRestrictions().handle(packet);
                 if (unknown == null) {
                     return null;
@@ -418,17 +420,17 @@ public class FullReplaySender extends ChannelDuplexHandler implements ReplaySend
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
-                        mc.displayGuiScreen(new AlertScreen(
-                                () -> mc.displayGuiScreen(null),
-                                new TranslationTextComponent("replaymod.error.unknownrestriction1"),
-                                new TranslationTextComponent("replaymod.error.unknownrestriction2", unknown)
+                        mc.setScreen(new AlertScreen(
+                                () -> mc.setScreen(null),
+                                new TranslatableComponent("replaymod.error.unknownrestriction1"),
+                                new TranslatableComponent("replaymod.error.unknownrestriction2", unknown)
                         ));
                     });
                 }
             }
         }
-        if (p instanceof SDisconnectPacket) {
-            ITextComponent reason = ((SDisconnectPacket) p).getReason();
+        if (p instanceof ClientboundDisconnectPacket) {
+            Component reason = ((ClientboundDisconnectPacket) p).getReason();
             String message = reason.getString();
             if ("Please update to view this replay.".equals(message)) {
                 // This version of the mod supports replay restrictions so we are allowed
@@ -439,15 +441,15 @@ public class FullReplaySender extends ChannelDuplexHandler implements ReplaySend
 
         if (BAD_PACKETS.contains(p.getClass())) return null;
 
-        if (p instanceof SCustomPayloadPlayPacket) {
-            SCustomPayloadPlayPacket packet = (SCustomPayloadPlayPacket) p;
-            ResourceLocation channelName = packet.getChannelName();
+        if (p instanceof ClientboundCustomPayloadPacket) {
+            ClientboundCustomPayloadPacket packet = (ClientboundCustomPayloadPacket) p;
+            ResourceLocation channelName = packet.getIdentifier();
             // On 1.14+ there's a dedicated OpenWrittenBookS2CPacket now
         }
 
-        if (p instanceof SSendResourcePackPacket) {
-            SSendResourcePackPacket packet = (SSendResourcePackPacket) p;
-            String url = packet.getURL();
+        if (p instanceof ClientboundResourcePackPacket) {
+            ClientboundResourcePackPacket packet = (ClientboundResourcePackPacket) p;
+            String url = packet.getUrl();
             if (url.startsWith("replay://")) {
                 int id = Integer.parseInt(url.substring("replay://".length()));
                 Map<Integer, String> index = replayFile.getResourcePackIndex();
@@ -465,73 +467,78 @@ public class FullReplaySender extends ChannelDuplexHandler implements ReplaySend
             }
         }
 
-        if (p instanceof SJoinGamePacket) {
-            SJoinGamePacket packet = (SJoinGamePacket) p;
-            int entId = packet.getPlayerId();
+        if (p instanceof ClientboundLoginPacket) {
+            ClientboundLoginPacket packet = (ClientboundLoginPacket) p;
+            int entId = packet.playerId();
             allowMovement = true;
             actualID = entId;
             entId = -1789435; // Camera entity id should be negative which is an invalid id and can't be used by servers
-            p = new SJoinGamePacket(
+            p = new ClientboundLoginPacket(
                     entId,
-                    GameType.SPECTATOR,
-                    GameType.SPECTATOR,
-                    packet.getHashedSeed(),
                     false,
-                    packet.getDimensionKeys(),
-                    (net.minecraft.util.registry.DynamicRegistries.Impl) packet.getDynamicRegistries(),
-                    packet.getSpawnDimension(),
-                    packet.getDimension(),
-                    0, // max players (has no getter -> never actually used)
-                    packet.getViewDistance(),
-                    packet.isReducedDebugInfo()
-                    , packet.shouldEnableRespawnScreen()
-                    , packet.func_240820_n_()
-                    , packet.isFlatWorld()
-            );
+                    GameType.SPECTATOR,
+                    GameType.SPECTATOR,
+                    packet.levels(),
+                    packet.registryHolder(),
+                    packet.dimensionType(),
+                    packet.dimension(),
+                    packet.seed(),
+                    0,
+                    packet.chunkRadius(),
+                    packet.simulationDistance(),
+                    packet.reducedDebugInfo(),
+                    packet.showDeathScreen(),
+                    packet.isDebug(),
+                    packet.isFlat()
+                    );
         }
 
-        if (p instanceof SRespawnPacket) {
-            SRespawnPacket respawn = (SRespawnPacket) p;
-            p = new SRespawnPacket(
-                    respawn.func_244303_b(),
-                    respawn.func_240827_c_(),
-                    respawn.getHashedSeed(),
+        if (p instanceof ClientboundRespawnPacket) {
+            ClientboundRespawnPacket respawn = (ClientboundRespawnPacket) p;
+            p = new ClientboundRespawnPacket(
+                    respawn.getDimensionType(),
+                    respawn.getDimension(),
+                    respawn.getSeed(),
                     GameType.SPECTATOR,
                     GameType.SPECTATOR,
-                    respawn.func_240828_f_(),
-                    respawn.isFlatWorld(),
-                    respawn.shouldSkipErrors()
+                    respawn.isDebug(),
+                    respawn.isFlat(),
+                    respawn.isSkippable()
             );
 
             allowMovement = true;
         }
 
-        if (p instanceof SPlayerPositionLookPacket) {
-            final SPlayerPositionLookPacket ppl = (SPlayerPositionLookPacket) p;
-            if (!hasWorldLoaded) hasWorldLoaded = true;
+        if (p instanceof ClientboundPlayerPositionPacket) {
+            final ClientboundPlayerPositionPacket ppl = (ClientboundPlayerPositionPacket) p;
+            if (!hasWorldLoaded) {
+                hasWorldLoaded = true;
+            }
 
             ReplayMod.instance.runLater(() -> {
-                if (mc.currentScreen instanceof DownloadTerrainScreen) {
+                if (mc.screen instanceof ReceivingLevelScreen) {
                     // Close the world loading screen manually in case we swallow the packet
-                    mc.displayGuiScreen(null);
+                    mc.setScreen(null);
                 }
             });
 
-            if (replayHandler.shouldSuppressCameraMovements()) return null;
+            if (replayHandler.shouldSuppressCameraMovements()) {
+                return null;
+            }
 
             CameraEntity cent = replayHandler.getCameraEntity();
 
-            for (SPlayerPositionLookPacket.Flags relative : ppl.getFlags()) {
-                if (relative == SPlayerPositionLookPacket.Flags.X
-                        || relative == SPlayerPositionLookPacket.Flags.Y
-                        || relative == SPlayerPositionLookPacket.Flags.Z) {
+            for (ClientboundPlayerPositionPacket.RelativeArgument relative : ppl.getRelativeArguments()) {
+                if (relative == ClientboundPlayerPositionPacket.RelativeArgument.X
+                        || relative == ClientboundPlayerPositionPacket.RelativeArgument.Y
+                        || relative == ClientboundPlayerPositionPacket.RelativeArgument.Z) {
                     return null; // At least one of the coordinates is relative, so we don't care
                 }
             }
 
             if (cent != null) {
-                if (!allowMovement && !((Math.abs(cent.getPosX() - ppl.getX()) > TP_DISTANCE_LIMIT) ||
-                        (Math.abs(cent.getPosZ() - ppl.getZ()) > TP_DISTANCE_LIMIT))) {
+                if (!allowMovement && !((Math.abs(cent.getX() - ppl.getX()) > TP_DISTANCE_LIMIT) ||
+                        (Math.abs(cent.getZ() - ppl.getZ()) > TP_DISTANCE_LIMIT))) {
                     return null;
                 } else {
                     allowMovement = false;
@@ -542,7 +549,7 @@ public class FullReplaySender extends ChannelDuplexHandler implements ReplaySend
                 @Override
                 @SuppressWarnings("unchecked")
                 public void run() {
-                    if (mc.world == null || !mc.isOnExecutionThread()) {
+                    if (mc.level == null || !mc.isSameThread()) {
                         ReplayMod.instance.runLater(this);
                         return;
                     }
@@ -553,8 +560,8 @@ public class FullReplaySender extends ChannelDuplexHandler implements ReplaySend
             }.run();
         }
 
-        if (p instanceof SChangeGameStatePacket) {
-            SChangeGameStatePacket pg = (SChangeGameStatePacket) p;
+        if (p instanceof ClientboundGameEventPacket) {
+            ClientboundGameEventPacket pg = (ClientboundGameEventPacket) p;
             // only allow the following packets:
             // 1 - End raining
             // 2 - Begin raining
@@ -563,16 +570,16 @@ public class FullReplaySender extends ChannelDuplexHandler implements ReplaySend
             // 7 - Fade value
             // 8 - Fade time
             if (!Arrays.asList(
-                    SChangeGameStatePacket.RAINING,
-                    SChangeGameStatePacket.CLEAR,
-                    SChangeGameStatePacket.SET_RAIN_STRENGTH,
-                    SChangeGameStatePacket.SET_THUNDER_STRENGTH
-            ).contains(pg.getState())) {
+                    ClientboundGameEventPacket.START_RAINING,
+                    ClientboundGameEventPacket.STOP_RAINING,
+                    ClientboundGameEventPacket.RAIN_LEVEL_CHANGE,
+                    ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE
+            ).contains(pg.getEvent())) {
                 return null;
             }
         }
 
-        if (p instanceof SChatPacket) {
+        if (p instanceof ClientboundChatPacket) {
             if (!ReplayModReplay.instance.getCore().getSettingsRegistry().get(Setting.SHOW_CHAT)) {
                 return null;
             }
@@ -816,14 +823,18 @@ public class FullReplaySender extends ChannelDuplexHandler implements ReplaySend
         desiredTimeStamp = millis;
     }
 
-    protected IPacket processPacketAsync(IPacket p) {
+    protected Packet processPacketAsync(Packet p) {
         //If hurrying, ignore some packets, except for short durations
         if (desiredTimeStamp - lastTimeStamp > 1000) {
-            if (p instanceof SSpawnParticlePacket) return null;
+            if (p instanceof ClientboundLevelParticlesPacket) {
+                return null;
+            }
 
-            if (p instanceof SSpawnObjectPacket) {
-                SSpawnObjectPacket pso = (SSpawnObjectPacket) p;
-                if (pso.getType() == EntityType.FIREWORK_ROCKET) return null;
+            if (p instanceof ClientboundAddEntityPacket) {
+                ClientboundAddEntityPacket pso = (ClientboundAddEntityPacket) p;
+                if (pso.getType() == EntityType.FIREWORK_ROCKET) {
+                    return null;
+                }
             }
         }
         return p;
@@ -908,9 +919,9 @@ public class FullReplaySender extends ChannelDuplexHandler implements ReplaySend
         }
     }
 
-    protected IPacket processPacketSync(IPacket p) {
-        if (p instanceof SUnloadChunkPacket) {
-            SUnloadChunkPacket packet = (SUnloadChunkPacket) p;
+    protected Packet processPacketSync(Packet p) {
+        if (p instanceof ClientboundForgetLevelChunkPacket) {
+            ClientboundForgetLevelChunkPacket packet = (ClientboundForgetLevelChunkPacket) p;
             int x = packet.getX();
             int z = packet.getZ();
             // If the chunk is getting unloaded, we will have to forcefully update the position of all entities
@@ -923,16 +934,16 @@ public class FullReplaySender extends ChannelDuplexHandler implements ReplaySend
             // 1.14+: The update issue remains but only for non-players and the unloading list bug appears to have been
             //        fixed (chunk unloading no longer removes the entities).
             // Get the chunk that will be unloaded
-            ClientWorld world = mc.world;
-            AbstractChunkProvider chunkProvider = world.getChunkProvider();
-            Chunk chunk = chunkProvider.getChunkNow(x, z
+            ClientLevel world = mc.level;
+            ChunkSource chunkProvider = world.getChunkSource();
+            LevelChunk chunk = chunkProvider.getChunkNow(x, z
             );
             if (chunk != null) {
                 List<Entity> entitiesInChunk = new ArrayList<>();
                 // Gather all entities in that chunk
-                for (Collection<Entity> entityList : chunk.getEntityLists()) {
+                /*for (Collection<Entity> entityList : chunk.getEntityLists()) {
                     entitiesInChunk.addAll(entityList);
-                }
+                }*/
                 for (Entity entity : entitiesInChunk) {
                     // Skip interpolation of position updates coming from server
                     // (See: newX in EntityLivingBase or otherPlayerMPX in EntityOtherPlayerMP)
@@ -943,21 +954,21 @@ public class FullReplaySender extends ChannelDuplexHandler implements ReplaySend
                     }
 
                     // Check whether the entity has left the chunk
-                    int chunkX = MathHelper.floor(entity.getPosX() / 16);
-                    int chunkY = MathHelper.floor(entity.getPosY() / 16);
-                    int chunkZ = MathHelper.floor(entity.getPosZ() / 16);
-                    if (entity.chunkCoordX != chunkX || entity.chunkCoordY != chunkY || entity.chunkCoordZ != chunkZ) {
-                        if (entity.addedToChunk) {
+                    int chunkX = Mth.floor(entity.getX() / 16);
+                    int chunkZ = Mth.floor(entity.getZ() / 16);
+
+                    if (entity.chunkPosition().x != chunkX || entity.chunkPosition().z != chunkZ) {
+                        /*if (entity.addedToChunk) {
                             // Entity has left the chunk
                             chunk.removeEntityAtIndex(entity, entity.chunkCoordY);
-                        }
-                        Chunk newChunk = chunkProvider.getChunkNow(chunkX, chunkZ
+                        }*/
+                        LevelChunk newChunk = chunkProvider.getChunkNow(chunkX, chunkZ
                         );
                         if (newChunk != null) {
                             newChunk.addEntity(entity);
                         } else {
                             // Entity has left all loaded chunks
-                            entity.addedToChunk = false;
+                            //entity.addedToChunk = false;
                         }
                     }
                 }

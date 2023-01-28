@@ -24,19 +24,19 @@
  */
 package com.replaymod.gui.container;
 
-public class GuiScreen extends com.replaymod.gui.container.AbstractGuiScreen<GuiScreen> {
+public class GuiScreen extends com.replaymod.gui.container.GuiComponentScreen<GuiScreen> {
     @SuppressWarnings("unchecked")
-    public static com.replaymod.gui.container.AbstractGuiScreen from(net.minecraft.client.gui.screen.Screen minecraft) {
-        if (!(minecraft instanceof com.replaymod.gui.container.AbstractGuiScreen.MinecraftGuiScreen)) {
+    public static com.replaymod.gui.container.GuiComponentScreen from(net.minecraft.client.gui.screens.Screen minecraft) {
+        if (!(minecraft instanceof com.replaymod.gui.container.GuiComponentScreen.MinecraftGuiScreen)) {
             return null;
         }
-        return ((AbstractGuiScreen.MinecraftGuiScreen) minecraft).getWrapper();
+        return ((GuiComponentScreen.MinecraftGuiScreen) minecraft).getWrapper();
     }
 
-    public static GuiScreen wrap(final net.minecraft.client.gui.screen.Screen minecraft) {
+    public static GuiScreen wrap(final net.minecraft.client.gui.screens.Screen minecraft) {
         return new GuiScreen() {
             @Override
-            public net.minecraft.client.gui.screen.Screen toMinecraft() {
+            public net.minecraft.client.gui.screens.Screen toMinecraft() {
                 return minecraft;
             }
         };

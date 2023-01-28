@@ -24,17 +24,17 @@
  */
 package com.replaymod.gui;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableColor;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 
 public interface GuiRenderer {
 
     ReadablePoint getOpenGlOffset();
 
-    MatrixStack getMatrixStack();
+    PoseStack getPoseStack();
 
     ReadableDimension getSize();
 

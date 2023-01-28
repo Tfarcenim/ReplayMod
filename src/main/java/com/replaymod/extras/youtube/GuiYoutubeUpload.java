@@ -22,8 +22,9 @@ import com.replaymod.gui.versions.Image;
 import com.replaymod.render.RenderSettings;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
 import joptsimple.internal.Strings;
-import net.minecraft.client.resources.I18n;
+import net.minecraft.client.resources.language.I18n;
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -34,6 +35,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
+import java.util.concurrent.Executor;
 
 import static com.replaymod.extras.ReplayModExtras.LOGGER;
 import static java.util.Arrays.asList;
@@ -51,10 +53,16 @@ public class GuiYoutubeUpload extends GuiScreen {
         public void run() {
             String problem = null;
 
-            if (nameField.getText().isEmpty()) problem = "replaymod.gui.titleempty";
+            if (nameField.getText().isEmpty()) {
+                problem = "replaymod.gui.titleempty";
+            }
             if (thumbnailImage != null) {
-                if (thumbnailImage.length > 1024 * 1024 * 2) problem = "replaymod.gui.videothumbnailtoolarge";
-                if (!asList("jpeg", "png").contains(thumbnailFormat)) problem = "replaymod.gui.videothumbnailformat";
+                if (thumbnailImage.length > 1024 * 1024 * 2) {
+                    problem = "replaymod.gui.videothumbnailtoolarge";
+                }
+                if (!asList("jpeg", "png").contains(thumbnailFormat)) {
+                    problem = "replaymod.gui.videothumbnailformat";
+                }
             }
 
             if (upload == null) {
@@ -76,7 +84,7 @@ public class GuiYoutubeUpload extends GuiScreen {
             .setMaxTextWidth(Integer.MAX_VALUE).setMaxTextHeight(Integer.MAX_VALUE);
 
     {
-        descriptionField.setText(new String[]{I18n.format("replaymod.gui.videodescription")});
+        descriptionField.setText(new String[]{I18n.get("replaymod.gui.videodescription")});
     }
 
     public final com.replaymod.gui.element.GuiTextField tagsField = new GuiTextField().setI18nHint("replaymod.gui.videotags");
@@ -212,7 +220,7 @@ public class GuiYoutubeUpload extends GuiScreen {
                                 LOGGER.error("Failed to open video URL \"{}\":", url, throwable);
                             }
                             upload = null;
-                            progressBar.setLabel(I18n.format("replaymod.gui.ytuploadprogress.done", url));
+                            progressBar.setLabel(I18n.get("replaymod.gui.ytuploadprogress.done", url));
                             setState(false);
                         }
 
@@ -227,6 +235,11 @@ public class GuiYoutubeUpload extends GuiScreen {
                             }
                             upload = null;
                             setState(false);
+                        }
+                    }, new Executor() {
+                        @Override
+                        public void execute(@NotNull Runnable command) {
+
                         }
                     });
                 } catch (GeneralSecurityException | IOException e) {

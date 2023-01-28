@@ -6,27 +6,27 @@ import com.replaymod.core.versions.MCVer;
 import com.replaymod.replay.camera.CameraController;
 import com.replaymod.replay.camera.CameraEntity;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.Timer;
+import net.minecraft.client.Timer;
 import org.lwjgl.glfw.GLFW;
 
 
 public class InputReplayTimer extends WrappedTimer {
     private final ReplayModReplay mod;
-    private final Minecraft mc;
+    private final Minecraft minecraft;
 
     public InputReplayTimer(Timer wrapped, ReplayModReplay mod) {
         super(wrapped);
         this.mod = mod;
-        this.mc = mod.getCore().getMinecraft();
+        this.minecraft = mod.getCore().getMinecraft();
     }
 
     @Override
     public int
-    getPartialTicks(
+    advanceTime(
             long sysClock
     ) {
         int ticksThisFrame =
-                super.getPartialTicks(
+                super.advanceTime(
                         sysClock
                 );
 
@@ -35,12 +35,12 @@ public class InputReplayTimer extends WrappedTimer {
 
         // If we are in a replay, we have to manually process key and mouse events as the
         // tick speed may vary or there may not be any ticks at all (when the replay is paused)
-        if (mod.getReplayHandler() != null && mc.world != null && mc.player != null) {
-            if (mc.currentScreen == null || mc.currentScreen.passEvents) {
+        if (mod.getReplayHandler() != null && minecraft.level != null && minecraft.player != null) {
+            if (minecraft.screen == null || minecraft.screen.passEvents) {
                 GLFW.glfwPollEvents();
-                MCVer.processKeyBinds();
+                MCVer.handleKeybinds();
             }
-            mc.keyboardListener.tick();
+            minecraft.keyboardHandler.tick();
         }
         return ticksThisFrame;
     }

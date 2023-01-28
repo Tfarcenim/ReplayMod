@@ -2,10 +2,8 @@ package com.replaymod.replay.camera;
 
 import de.johni0702.minecraft.gui.utils.lwjgl.vector.Vector3f;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.settings.KeyBinding;
-
-import static net.minecraft.util.math.MathHelper.cos;
-import static net.minecraft.util.math.MathHelper.sin;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.util.Mth;
 
 // TODO: Marius is responsible for this. Please, someone clean it up.
 public class ClassicCameraController implements CameraController {
@@ -34,34 +32,36 @@ public class ClassicCameraController implements CameraController {
     public void update(float partialTicksPassed) {
         boolean forward = false, backward = false, left = false, right = false, up = false, down = false;
         speedup = false;
-        for (KeyBinding kb : Minecraft.getInstance().gameSettings.keyBindings) {
-            if (!kb.isKeyDown()) continue;
-            if (kb.getKeyDescription().equals("key.forward")) {
+        for (KeyMapping kb : Minecraft.getInstance().options.keyMappings) {
+            if (!kb.isDown()) {
+                continue;
+            }
+            if (kb.getName().equals("key.forward")) {
                 forward = true;
                 speedup = true;
             }
 
-            if (kb.getKeyDescription().equals("key.back")) {
+            if (kb.getName().equals("key.back")) {
                 backward = true;
                 speedup = true;
             }
 
-            if (kb.getKeyDescription().equals("key.jump")) {
+            if (kb.getName().equals("key.jump")) {
                 up = true;
                 speedup = true;
             }
 
-            if (kb.getKeyDescription().equals("key.left")) {
+            if (kb.getName().equals("key.left")) {
                 left = true;
                 speedup = true;
             }
 
-            if (kb.getKeyDescription().equals("key.right")) {
+            if (kb.getName().equals("key.right")) {
                 right = true;
                 speedup = true;
             }
 
-            if (kb.getKeyDescription().equals("key.sneak")) {
+            if (kb.getName().equals("key.sneak")) {
                 down = true;
                 speedup = true;
             }
@@ -82,7 +82,9 @@ public class ClassicCameraController implements CameraController {
     }
 
     private void setCameraMaximumSpeed(double maxSpeed) {
-        if (maxSpeed < LOWER_SPEED || maxSpeed > UPPER_SPEED) return;
+        if (maxSpeed < LOWER_SPEED || maxSpeed > UPPER_SPEED) {
+            return;
+        }
         MAX_SPEED = maxSpeed;
         THRESHOLD = MAX_SPEED / 20;
         DECAY = 5;
@@ -111,12 +113,16 @@ public class ClassicCameraController implements CameraController {
     private void updateMovement() {
         long frac = System.currentTimeMillis() - lastCall;
 
-        if (frac == 0) return;
+        if (frac == 0) {
+            return;
+        }
 
         double decFac = Math.max(0, 1 - (DECAY * (frac / 1000D)));
 
         if (speedup) {
-            if (motion < THRESHOLD) motion = THRESHOLD;
+            if (motion < THRESHOLD) {
+                motion = THRESHOLD;
+            }
             motion /= decFac;
         } else {
             motion *= decFac;
@@ -137,22 +143,22 @@ public class ClassicCameraController implements CameraController {
     }
 
     private void setMovement(MoveDirection dir) {
-        float rotationPitch = camera.rotationPitch, rotationYaw = camera.rotationYaw;
+        float xRot = camera.xRot, yRot = camera.yRot;
         switch (dir) {
             case BACKWARD:
-                direction = this.getVectorForRotation(-rotationPitch, rotationYaw - 180);
+                direction = this.getVectorForRotation(-xRot, yRot - 180);
                 break;
             case DOWN:
                 direction = this.getVectorForRotation(90, 0);
                 break;
             case FORWARD:
-                direction = this.getVectorForRotation(rotationPitch, rotationYaw);
+                direction = this.getVectorForRotation(xRot, yRot);
                 break;
             case LEFT:
-                direction = this.getVectorForRotation(0, rotationYaw - 90);
+                direction = this.getVectorForRotation(0, yRot - 90);
                 break;
             case RIGHT:
-                direction = this.getVectorForRotation(0, rotationYaw + 90);
+                direction = this.getVectorForRotation(0, yRot + 90);
                 break;
             case UP:
                 direction = this.getVectorForRotation(-90, 0);
@@ -173,10 +179,10 @@ public class ClassicCameraController implements CameraController {
     }
 
     private Vector3f getVectorForRotation(float pitch, float yaw) {
-        float f2 = cos(-yaw * 0.017453292F - (float) Math.PI);
-        float f3 = sin(-yaw * 0.017453292F - (float) Math.PI);
-        float f4 = -cos(-pitch * 0.017453292F);
-        float f5 = sin(-pitch * 0.017453292F);
+        float f2 = Mth.cos(-yaw * 0.017453292F - (float) Math.PI);
+        float f3 = Mth.sin(-yaw * 0.017453292F - (float) Math.PI);
+        float f4 = -Mth.cos(-pitch * 0.017453292F);
+        float f5 = Mth.sin(-pitch * 0.017453292F);
         return new Vector3f(f3 * f4, f5, f2 * f4);
     }
 

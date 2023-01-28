@@ -26,7 +26,7 @@ package com.replaymod.gui.element;
 
 import com.replaymod.gui.container.GuiContainer;
 
-public class GuiSlider extends AbstractGuiSlider<GuiSlider> {
+public class GuiSlider extends GuiComponentSlider<GuiSlider> {
     public GuiSlider() {
     }
 

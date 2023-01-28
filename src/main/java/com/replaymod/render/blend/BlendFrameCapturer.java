@@ -1,7 +1,7 @@
 package com.replaymod.render.blend;
 
 import com.replaymod.render.capturer.RenderInfo;
-import com.replaymod.render.capturer.WorldRenderer;
+import com.replaymod.render.capturer.LevelRenderer;
 import com.replaymod.render.frame.BitmapFrame;
 import com.replaymod.render.rendering.Channel;
 import com.replaymod.render.rendering.FrameCapturer;
@@ -14,12 +14,12 @@ import java.util.Collections;
 import java.util.Map;
 
 public class BlendFrameCapturer implements FrameCapturer<BitmapFrame> {
-    protected final WorldRenderer worldRenderer;
+    protected final LevelRenderer levelRenderer;
     protected final RenderInfo renderInfo;
     protected int framesDone;
 
-    public BlendFrameCapturer(WorldRenderer worldRenderer, RenderInfo renderInfo) {
-        this.worldRenderer = worldRenderer;
+    public BlendFrameCapturer(LevelRenderer levelRenderer, RenderInfo renderInfo) {
+        this.levelRenderer = levelRenderer;
         this.renderInfo = renderInfo;
     }
 
@@ -37,7 +37,7 @@ public class BlendFrameCapturer implements FrameCapturer<BitmapFrame> {
         renderInfo.updateForNextFrame();
 
         BlendState.getState().preFrame(framesDone);
-        worldRenderer.renderWorld(Minecraft.getInstance().getRenderPartialTicks(), null);
+        levelRenderer.renderWorld(Minecraft.getInstance().getFrameTime(), null);
         BlendState.getState().postFrame(framesDone);
 
         BitmapFrame frame = new BitmapFrame(framesDone++, new Dimension(0, 0), 0, ByteBufferPool.allocate(0));

@@ -19,8 +19,8 @@ public abstract class PboOpenGlFrameCapturer<F extends Frame, D extends Enum<D> 
     private final D[] data;
     private PixelBufferObject pbo, otherPBO;
 
-    public PboOpenGlFrameCapturer(WorldRenderer worldRenderer, RenderInfo renderInfo, Class<D> type, int framePixels) {
-        super(worldRenderer, renderInfo);
+    public PboOpenGlFrameCapturer(LevelRenderer levelRenderer, RenderInfo renderInfo, Class<D> type, int framePixels) {
+        super(levelRenderer, renderInfo);
 
         withDepth = renderInfo.getRenderSettings().isDepthMap();
         data = type.getEnumConstants();
@@ -92,13 +92,13 @@ public abstract class PboOpenGlFrameCapturer<F extends Frame, D extends Enum<D> 
         pbo.bind();
 
         int offset = captureData.ordinal() * getFrameWidth() * getFrameHeight() * 4;
-        frameBuffer().bindFramebuffer(true);
+        frameBuffer().bindWrite(true);
         GL11.glReadPixels(0, 0, getFrameWidth(), getFrameHeight(), GL12.GL_BGRA, GL11.GL_UNSIGNED_BYTE, offset);
         if (withDepth) {
             offset += data.length * getFrameWidth() * getFrameHeight() * 4;
             GL11.glReadPixels(0, 0, getFrameWidth(), getFrameHeight(), GL11.GL_DEPTH_COMPONENT, GL11.GL_FLOAT, offset);
         }
-        frameBuffer().unbindFramebuffer();
+        frameBuffer().unbindWrite();
 
         pbo.unbind();
         return null;

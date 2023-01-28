@@ -3,13 +3,13 @@ package com.replaymod.editor.handler;
 import com.replaymod.core.utils.Utils;
 import com.replaymod.editor.ReplayModEditor;
 import com.replaymod.editor.gui.GuiEditReplay;
-import com.replaymod.gui.container.AbstractGuiScreen;
+import com.replaymod.gui.container.GuiComponentScreen;
 import com.replaymod.gui.container.GuiScreen;
 import com.replaymod.gui.element.GuiButton;
 import com.replaymod.gui.utils.EventRegistrations;
 import com.replaymod.gui.versions.callbacks.InitScreenCallback;
 import com.replaymod.replay.gui.screen.GuiReplayViewer;
-import net.minecraft.crash.CrashReport;
+import net.minecraft.CrashReport;
 
 import java.io.IOException;
 
@@ -18,8 +18,8 @@ public class GuiHandler extends EventRegistrations {
         on(InitScreenCallback.EVENT, (vanillaGuiScreen, buttonList) -> injectIntoReplayViewer(vanillaGuiScreen));
     }
 
-    public void injectIntoReplayViewer(net.minecraft.client.gui.screen.Screen vanillaGuiScreen) {
-        AbstractGuiScreen guiScreen = GuiScreen.from(vanillaGuiScreen);
+    public void injectIntoReplayViewer(net.minecraft.client.gui.screens.Screen vanillaGuiScreen) {
+        GuiComponentScreen guiScreen = GuiScreen.from(vanillaGuiScreen);
         if (!(guiScreen instanceof GuiReplayViewer)) {
             return;
         }
@@ -38,7 +38,7 @@ public class GuiHandler extends EventRegistrations {
                     }
                 }.open();
             } catch (IOException e) {
-                Utils.error(ReplayModEditor.LOGGER, replayViewer, CrashReport.makeCrashReport(e, "Opening replay editor"), () -> {
+                Utils.error(ReplayModEditor.LOGGER, replayViewer, CrashReport.forThrowable(e, "Opening replay editor"), () -> {
                 });
             }
         }).setSize(73, 20).setI18nLabel("replaymod.gui.edit").setDisabled());

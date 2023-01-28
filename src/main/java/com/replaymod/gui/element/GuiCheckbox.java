@@ -26,7 +26,7 @@ package com.replaymod.gui.element;
 
 import com.replaymod.gui.container.GuiContainer;
 
-public class GuiCheckbox extends AbstractGuiCheckbox<GuiCheckbox> {
+public class GuiCheckbox extends GuiComponentCheckbox<GuiCheckbox> {
     public GuiCheckbox() {
     }
 

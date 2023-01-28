@@ -3,10 +3,11 @@ package com.replaymod.mixin;
 import com.replaymod.compat.shaders.ShaderReflection;
 import com.replaymod.render.hooks.ForceChunkLoadingHook;
 import com.replaymod.render.hooks.IForceChunkLoading;
-import net.minecraft.client.renderer.ActiveRenderInfo;
-import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.Camera;
+import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.chunk.ChunkRenderDispatcher;
-import net.minecraft.client.renderer.culling.ClippingHelper;
+import net.minecraft.client.renderer.chunk.RenderRegionCache;
+import net.minecraft.client.renderer.culling.Frustum;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -14,8 +15,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 
-@Mixin(WorldRenderer.class)
+@Mixin(LevelRenderer.class)
 public abstract class Mixin_ForceChunkLoading implements IForceChunkLoading {
     private ForceChunkLoadingHook replayModRender_hook;
 
@@ -25,24 +27,24 @@ public abstract class Mixin_ForceChunkLoading implements IForceChunkLoading {
     }
 
     @Shadow
-    private Set<ChunkRenderDispatcher.ChunkRender> chunksToUpdate;
+    private BlockingQueue<ChunkRenderDispatcher.RenderChunk> recentlyCompiledChunks;
 
     @Shadow
-    private ChunkRenderDispatcher renderDispatcher;
+    private ChunkRenderDispatcher chunkRenderDispatcher;
 
     @Shadow
-    private boolean displayListEntitiesDirty;
+    private boolean generateClouds;
 
     @Shadow
-    protected abstract void setupTerrain(ActiveRenderInfo camera_1, ClippingHelper frustum_1, boolean boolean_1, int int_1, boolean boolean_2);
+    protected abstract void setupRender(Camera pCamera, Frustum pFrustrum, boolean pHasCapturedFrustrum, boolean pIsSpectator);
 
     @Shadow
-    private int frameId;
+    private int ticks;
 
     private boolean passThrough;
 
-    @Inject(method = "setupTerrain", at = @At("HEAD"), cancellable = true)
-    private void forceAllChunks(ActiveRenderInfo camera_1, ClippingHelper frustum_1, boolean boolean_1, int int_1, boolean boolean_2, CallbackInfo ci) throws IllegalAccessException {
+    @Inject(method = "setupRender", at = @At("HEAD"), cancellable = true)
+    private void forceAllChunks(Camera pCamera, Frustum pFrustrum, boolean pHasCapturedFrustrum, boolean pIsSpectator, CallbackInfo ci) throws IllegalAccessException {
         if (replayModRender_hook == null) {
             return;
         }
@@ -58,24 +60,25 @@ public abstract class Mixin_ForceChunkLoading implements IForceChunkLoading {
         try {
             do {
                 // Determine which chunks shall be visible
-                setupTerrain(camera_1, frustum_1, boolean_1, this.frameId++, boolean_2);
+                this.ticks++;
+                setupRender(pCamera, pFrustrum, pHasCapturedFrustrum, pIsSpectator);
 
                 // Schedule all chunks which need rebuilding (we schedule even important rebuilds because we wait for
                 // all of them anyway and this way we can take advantage of threading)
-                for (ChunkRenderDispatcher.ChunkRender builtChunk : this.chunksToUpdate) {
+                for (ChunkRenderDispatcher.RenderChunk builtChunk : this.recentlyCompiledChunks) {
                     // MC sometimes schedules invalid chunks when you're outside of loaded chunks (e.g. y > 256)
-                    if (builtChunk.shouldStayLoaded()) {
-                        builtChunk.rebuildChunkLater(this.renderDispatcher);
+                    if (builtChunk.hasAllNeighbors()) {
+                        builtChunk.rebuildChunkAsync(this.chunkRenderDispatcher,new RenderRegionCache());
                     }
-                    builtChunk.clearNeedsUpdate();
+                    builtChunk.setNotDirty();
                 }
-                this.chunksToUpdate.clear();
+                this.recentlyCompiledChunks.clear();
 
                 // Upload all chunks
-                this.displayListEntitiesDirty |= ((ForceChunkLoadingHook.IBlockOnChunkRebuilds) this.renderDispatcher).uploadEverythingBlocking();
+                this.generateClouds |= ((ForceChunkLoadingHook.IBlockOnChunkRebuilds) this.chunkRenderDispatcher).uploadEverythingBlocking();
 
                 // Repeat until no more updates are needed
-            } while (this.displayListEntitiesDirty);
+            } while (this.generateClouds);
         } finally {
             passThrough = false;
         }

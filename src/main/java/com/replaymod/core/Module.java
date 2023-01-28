@@ -10,6 +10,6 @@ public interface Module {
     }
 
     // FMLClientSetupEvent for 1.13+, FMLInitializationEvent below
-    default void registerKeyBindings(KeyBindingRegistry registry) {
+    default void registerKeyMappings(KeyMappingRegistry registry) {
     }
 }

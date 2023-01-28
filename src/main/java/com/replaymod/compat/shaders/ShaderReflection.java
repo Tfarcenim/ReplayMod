@@ -1,7 +1,7 @@
 package com.replaymod.compat.shaders;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.ActiveRenderInfo;
+import net.minecraft.client.Camera;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -38,7 +38,7 @@ public class ShaderReflection {
             shaders_isShadowPass.setAccessible(true);
 
             shaders_beginRender = shadersClass.getDeclaredMethod("beginRender", Minecraft.class,
-                    ActiveRenderInfo.class,
+                    Camera.class,
                     float.class, long.class);
             shaders_beginRender.setAccessible(true);
 

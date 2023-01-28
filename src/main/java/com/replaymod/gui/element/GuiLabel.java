@@ -26,7 +26,7 @@ package com.replaymod.gui.element;
 
 import com.replaymod.gui.container.GuiContainer;
 
-public class GuiLabel extends AbstractGuiLabel<GuiLabel> {
+public class GuiLabel extends GuiComponentLabel<GuiLabel> {
     public GuiLabel() {
     }
 

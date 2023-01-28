@@ -1,5 +1,6 @@
 package com.replaymod.render.blend.exporters;
 
+import com.mojang.blaze3d.vertex.VertexFormat;
 import com.replaymod.core.versions.MCVer;
 import com.replaymod.mixin.ParticleAccessor;
 import com.replaymod.render.blend.BlendMeshBuilder;
@@ -11,7 +12,7 @@ import de.johni0702.minecraft.gui.utils.lwjgl.vector.Matrix4f;
 import de.johni0702.minecraft.gui.utils.lwjgl.vector.Vector3f;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 
 import java.io.IOException;
 import java.util.IdentityHashMap;
@@ -22,14 +23,14 @@ import static com.replaymod.render.blend.Util.getGlModelViewMatrix;
 
 public class ParticlesExporter implements Exporter {
     private final Minecraft mc = MCVer.getMinecraft();
-    private final RenderState renderState;
+    private final RenderStateShard renderState;
     private DObject pointAtObject;
     private DObject particlesObject;
     private DObject litParticlesObject;
     private Map<Particle, DObject> particleObjects;
     private Map<Particle, DObject> particleObjectsSeen;
 
-    public ParticlesExporter(RenderState renderState) {
+    public ParticlesExporter(RenderStateShard renderState) {
         this.renderState = renderState;
     }
 
@@ -135,12 +136,14 @@ public class ParticlesExporter implements Exporter {
         BlendMeshBuilder builder = new BlendMeshBuilder(mesh);
         builder.setReverseOffset(offset);
         builder.setWellBehaved(true);
-        builder.begin(7, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP);
-        particle.renderParticle(builder,
-                MCVer.getMinecraft().gameRenderer.getActiveRenderInfo(),
+        //WTF
+        builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.PARTICLE);
+
+        particle.render(builder,
+                MCVer.getMinecraft().gameRenderer.getMainCamera(),
                 0
         );
-        builder.finishDrawing();
+        builder.end();
         return mesh;
     }
 

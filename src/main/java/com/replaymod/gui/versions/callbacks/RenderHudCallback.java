@@ -1,6 +1,6 @@
 package com.replaymod.gui.versions.callbacks;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.replaymod.gui.utils.Event;
 
 public interface RenderHudCallback {
@@ -12,5 +12,5 @@ public interface RenderHudCallback {
             }
     );
 
-    void renderHud(MatrixStack stack, float partialTicks);
+    void renderHud(PoseStack stack, float partialTicks);
 }

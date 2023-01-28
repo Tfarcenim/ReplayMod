@@ -7,8 +7,8 @@ import com.replaymod.render.blend.data.DObject;
 import de.johni0702.minecraft.gui.utils.lwjgl.vector.Matrix4f;
 import de.johni0702.minecraft.gui.utils.lwjgl.vector.Vector3f;
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -18,11 +18,11 @@ import static com.replaymod.render.blend.Util.getGlModelViewMatrix;
 
 public class EntityExporter implements Exporter {
     private final Minecraft mc = MCVer.getMinecraft();
-    private final RenderState renderState;
+    private final RenderStateShard renderState;
     private DObject entitiesObject;
     private Map<Entity, DObject> entityObjects;
 
-    public EntityExporter(RenderState renderState) {
+    public EntityExporter(RenderStateShard renderState) {
         this.renderState = renderState;
     }
 

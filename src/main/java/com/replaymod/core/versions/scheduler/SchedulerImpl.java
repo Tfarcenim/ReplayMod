@@ -1,23 +1,25 @@
 package com.replaymod.core.versions.scheduler;
 
 import com.replaymod.mixin.MinecraftAccessor;
+import net.minecraft.CrashReport;
 import net.minecraft.client.Minecraft;
-import net.minecraft.crash.ReportedException;
-import net.minecraft.util.concurrent.RecursiveEventLoop;
+import net.minecraft.ReportedException;
+import net.minecraft.util.thread.ReentrantBlockableEventLoop;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 
 public class SchedulerImpl implements Scheduler {
     private static final Minecraft mc = Minecraft.getInstance();
 
     @Override
     public void runSync(Runnable runnable) throws InterruptedException, ExecutionException, TimeoutException {
-        if (mc.isOnExecutionThread()) {
+        if (mc.isSameThread()) {
             runnable.run();
         } else {
-            executor.supplyAsync(() -> {
+            executor.submit(() -> {
                 runnable.run();
                 return null;
             }).get(30, TimeUnit.SECONDS);
@@ -29,7 +31,7 @@ public class SchedulerImpl implements Scheduler {
         runLater(new Runnable() {
             @Override
             public void run() {
-                if (mc.loadingGui != null) {
+                if (mc.getOverlay() != null) {
                     // delay until after resources have been loaded
                     runLater(this);
                     return;
@@ -52,7 +54,7 @@ public class SchedulerImpl implements Scheduler {
     // stuff submitted via runLater is actually always run (e.g. recording might not be fully stopped because parts
     // of that are run via runLater and stopping the recording happens right around the time MC clears the queue).
     // Luckily, that's also the version where MC pulled out the executor implementation, so we can just spin up our own.
-    public static class ReplayModExecutor extends RecursiveEventLoop<Runnable> {
+    public static class ReplayModExecutor extends ReentrantBlockableEventLoop<Runnable> {
         private final Thread mcThread = Thread.currentThread();
 
         private ReplayModExecutor(String string_1) {
@@ -60,23 +62,23 @@ public class SchedulerImpl implements Scheduler {
         }
 
         @Override
-        protected Runnable wrapTask(Runnable runnable) {
+        protected Runnable wrapRunnable(Runnable runnable) {
             return runnable;
         }
 
         @Override
-        protected boolean canRun(Runnable runnable) {
+        protected boolean shouldRun(Runnable runnable) {
             return true;
         }
 
         @Override
-        protected Thread getExecutionThread() {
+        protected Thread getRunningThread() {
             return mcThread;
         }
 
         @Override
-        public void drainTasks() {
-            super.drainTasks();
+        public void runAllTasks() {
+            super.runAllTasks();
         }
     }
 
@@ -84,7 +86,7 @@ public class SchedulerImpl implements Scheduler {
 
     @Override
     public void runTasks() {
-        executor.drainTasks();
+        executor.runAllTasks();
     }
 
     @Override
@@ -99,7 +101,7 @@ public class SchedulerImpl implements Scheduler {
     }
 
     private void runLater(Runnable runnable, Runnable defer) {
-        if (mc.isOnExecutionThread() && inRunLater && !inRenderTaskQueue) {
+        if (mc.isSameThread() && inRunLater && !inRenderTaskQueue) {
             ((MinecraftAccessor) mc).getRenderTaskQueue().offer(() -> {
                 inRenderTaskQueue = true;
                 try {
@@ -109,14 +111,19 @@ public class SchedulerImpl implements Scheduler {
                 }
             });
         } else {
-            executor.enqueue(() -> {
+            executor.execute(() -> {
                 inRunLater = true;
                 try {
                     runnable.run();
                 } catch (ReportedException e) {
                     e.printStackTrace();
-                    System.err.println(e.getCrashReport().getCompleteReport());
-                    mc.crashed(e.getCrashReport());
+                    System.err.println(e.getReport().getFriendlyReport());
+                    mc.delayCrash(new Supplier<CrashReport>() {
+                        @Override
+                        public CrashReport get() {
+                            return e.getReport();
+                        }
+                    });
                 } finally {
                     inRunLater = false;
                 }

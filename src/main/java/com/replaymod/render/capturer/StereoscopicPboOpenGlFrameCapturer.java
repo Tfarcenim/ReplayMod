@@ -6,8 +6,8 @@ import com.replaymod.render.frame.StereoscopicOpenGlFrame;
 public class StereoscopicPboOpenGlFrameCapturer
         extends PboOpenGlFrameCapturer<StereoscopicOpenGlFrame, StereoscopicOpenGlFrameCapturer.Data> {
 
-    public StereoscopicPboOpenGlFrameCapturer(WorldRenderer worldRenderer, RenderInfo renderInfo) {
-        super(worldRenderer, renderInfo, StereoscopicOpenGlFrameCapturer.Data.class,
+    public StereoscopicPboOpenGlFrameCapturer(LevelRenderer levelRenderer, RenderInfo renderInfo) {
+        super(levelRenderer, renderInfo, StereoscopicOpenGlFrameCapturer.Data.class,
                 renderInfo.getFrameSize().getWidth() / 2 * renderInfo.getFrameSize().getHeight());
     }
 

@@ -2,9 +2,9 @@ package com.replaymod.mixin;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.replaymod.render.hooks.ForceChunkLoadingHook;
-import net.minecraft.client.renderer.RegionRenderCacheBuilder;
+import net.minecraft.client.renderer.ChunkBufferBuilderPack;
 import net.minecraft.client.renderer.chunk.ChunkRenderDispatcher;
-import net.minecraft.util.concurrent.DelegatedTaskExecutor;
+import net.minecraft.util.thread.ProcessorMailbox;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -19,39 +19,50 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+@SuppressWarnings("AlibabaAbstractClassShouldStartWithAbstractNaming")
 @Mixin(ChunkRenderDispatcher.class)
 public abstract class Mixin_BlockOnChunkRebuilds implements ForceChunkLoadingHook.IBlockOnChunkRebuilds {
     @Shadow
     @Final
-    private Queue<RegionRenderCacheBuilder> freeBuilders;
+    private Queue<ChunkBufferBuilderPack> freeBuffers;
 
-    @Shadow
-    public abstract boolean runChunkUploads();
+    /*@Shadow
+    public abstract boolean runChunkUploads();*/
+
+    public boolean runChunkUploads(){
+        boolean flag;
+        Runnable runnable;
+        for(flag = false; (runnable = this.toUpload.poll()) != null; flag = true) {
+            runnable.run();
+        }
+
+        return flag;
+    }
 
     @Shadow
     @Final
-    private DelegatedTaskExecutor<Runnable> delegatedTaskExecutor;
+    private ProcessorMailbox<Runnable> mailbox;
 
     @Shadow
     protected abstract void runTask();
 
     @Shadow
     @Final
-    private Queue<Runnable> uploadTasks;
+    private Queue<Runnable> toUpload;
     private final Lock waitingForWorkLock = new ReentrantLock();
     private final Condition newWork = waitingForWorkLock.newCondition();
     private volatile boolean allDone;
 
     private int totalBufferCount;
 
-    @Inject(method = "<init>", at = @At("RETURN"))
+    @Inject(method = "<init>(Lnet/minecraft/client/multiplayer/ClientLevel;Lnet/minecraft/client/renderer/LevelRenderer;Ljava/util/concurrent/Executor;ZLnet/minecraft/client/renderer/ChunkBufferBuilderPack;I)V", at = @At("RETURN"))
     private void rememberTotalThreads(CallbackInfo ci) {
-        this.totalBufferCount = this.freeBuilders.size();
+        this.totalBufferCount = this.freeBuffers.size();
     }
 
     @Inject(method = "runTask", at = @At("RETURN"))
     private void notifyMainThreadIfEverythingIsDone(CallbackInfo ci) {
-        if (this.freeBuilders.size() == this.totalBufferCount) {
+        if (this.freeBuffers.size() == this.totalBufferCount) {
             // Looks like we're done, better notify the main thread in case the previous task didn't generate an upload
             this.waitingForWorkLock.lock();
             try {
@@ -76,9 +87,9 @@ public abstract class Mixin_BlockOnChunkRebuilds implements ForceChunkLoadingHoo
     }
 
     private boolean waitForMainThreadWork() {
-        boolean allDone = this.delegatedTaskExecutor.<Boolean>func_213141_a(reply -> () -> {
+        boolean allDone = this.mailbox.<Boolean>ask(reply -> () -> {
             runTask();
-            reply.enqueue(this.freeBuilders.size() == this.totalBufferCount);
+            reply.tell(this.freeBuffers.size() == this.totalBufferCount);
         }).join();
 
         if (allDone) {
@@ -103,7 +114,7 @@ public abstract class Mixin_BlockOnChunkRebuilds implements ForceChunkLoadingHoo
 
                     if (this.allDone) {
                         return true;
-                    } else if (!this.uploadTasks.isEmpty()) {
+                    } else if (!this.toUpload.isEmpty()) {
                         return false;
                     } else {
                         this.newWork.awaitUninterruptibly();

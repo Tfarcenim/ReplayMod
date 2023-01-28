@@ -28,7 +28,7 @@ import com.replaymod.gui.container.GuiContainer;
 import com.replaymod.gui.element.GuiElement;
 
 public class GuiResourceLoadingList<U extends GuiElement<U> & Comparable<U>>
-        extends AbstractGuiResourceLoadingList<GuiResourceLoadingList<U>, U> {
+        extends GuiComponentResourceLoadingList<GuiResourceLoadingList<U>, U> {
     public GuiResourceLoadingList() {
     }
 

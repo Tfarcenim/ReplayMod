@@ -8,10 +8,10 @@ public class CubicPboOpenGlFrameCapturer extends
 
     private final int frameSize;
 
-    public CubicPboOpenGlFrameCapturer(WorldRenderer worldRenderer, RenderInfo renderInfo, int frameSize) {
-        super(worldRenderer, renderInfo, CubicOpenGlFrameCapturer.Data.class, frameSize * frameSize);
+    public CubicPboOpenGlFrameCapturer(LevelRenderer levelRenderer, RenderInfo renderInfo, int frameSize) {
+        super(levelRenderer, renderInfo, CubicOpenGlFrameCapturer.Data.class, frameSize * frameSize);
         this.frameSize = frameSize;
-        worldRenderer.setOmnidirectional(true);
+        levelRenderer.setOmnidirectional(true);
     }
 
     @Override

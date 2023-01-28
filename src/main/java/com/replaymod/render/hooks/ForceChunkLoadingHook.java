@@ -1,12 +1,12 @@
 package com.replaymod.render.hooks;
 
-import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.renderer.LevelRenderer;
 
 public class ForceChunkLoadingHook {
 
-    private final WorldRenderer hooked;
+    private final LevelRenderer hooked;
 
-    public ForceChunkLoadingHook(WorldRenderer renderGlobal) {
+    public ForceChunkLoadingHook(LevelRenderer renderGlobal) {
         this.hooked = renderGlobal;
 
         IForceChunkLoading.from(renderGlobal).replayModRender_setHook(this);

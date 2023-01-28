@@ -18,7 +18,7 @@ class SettingsRegistryBackend {
     private static final Logger LOGGER = LogManager.getLogger();
     private final Map<SettingsRegistry.SettingKey<?>, Object> settings;
 
-    private final Path configFile = getMinecraft().gameDir.toPath().resolve("config/replaymod.json");
+    private final Path configFile = getMinecraft().gameDirectory.toPath().resolve("config/replaymod.json");
 
     SettingsRegistryBackend(Map<SettingsRegistry.SettingKey<?>, Object> settings) {
         this.settings = settings;
@@ -106,7 +106,7 @@ class SettingsRegistryBackend {
                     }
                     Path fileName = ((Path) event.context());
                     if (fileName.equals(configFile.getFileName())) {
-                        Minecraft.getInstance().enqueue(this::reload);
+                        Minecraft.getInstance().execute(this::reload);
                     }
                 }
                 if (!nextKey.reset()) {

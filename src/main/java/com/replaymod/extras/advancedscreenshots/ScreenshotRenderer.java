@@ -8,11 +8,13 @@ import com.replaymod.render.hooks.ForceChunkLoadingHook;
 import com.replaymod.render.rendering.Pipelines;
 import de.johni0702.minecraft.gui.utils.lwjgl.Dimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
-import net.minecraft.client.MainWindow;
+import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.Minecraft;
-import net.minecraft.crash.CrashReport;
+import net.minecraft.CrashReport;
 
-import static com.replaymod.core.versions.MCVer.resizeMainWindow;
+import java.util.function.Supplier;
+
+import static com.replaymod.core.versions.MCVer.resizeWindow;
 
 public class ScreenshotRenderer implements RenderInfo {
 
@@ -28,13 +30,13 @@ public class ScreenshotRenderer implements RenderInfo {
 
     public boolean renderScreenshot() throws Throwable {
         try {
-            MainWindow window = mc.getMainWindow();
-            int widthBefore = window.getFramebufferWidth();
-            int heightBefore = window.getFramebufferHeight();
-            boolean hideGUIBefore = mc.gameSettings.hideGUI;
-            mc.gameSettings.hideGUI = true;
+            var target = mc.getMainRenderTarget();
+            int widthBefore = target.width;
+            int heightBefore = target.height;
+            boolean hideGuiBefore = mc.options.hideGui;
+            mc.options.hideGui = true;
 
-            ForceChunkLoadingHook clrg = new ForceChunkLoadingHook(mc.worldRenderer);
+            ForceChunkLoadingHook clrg = new ForceChunkLoadingHook(mc.levelRenderer);
 
             if (settings.getRenderMethod() == RenderSettings.RenderMethod.BLEND) {
                 BlendState.setState(new BlendState(settings.getOutputFile()));
@@ -46,13 +48,18 @@ public class ScreenshotRenderer implements RenderInfo {
 
             clrg.uninstall();
 
-            mc.gameSettings.hideGUI = hideGUIBefore;
-            resizeMainWindow(mc, widthBefore, heightBefore);
+            mc.options.hideGui = hideGuiBefore;
+            resizeWindow(mc, widthBefore, heightBefore);
             return true;
         } catch (OutOfMemoryError e) {
             e.printStackTrace();
-            CrashReport report = CrashReport.makeCrashReport(e, "Creating Equirectangular Screenshot");
-            MCVer.getMinecraft().crashed(report);
+            CrashReport report = CrashReport.forThrowable(e, "Creating Equirectangular Screenshot");
+            MCVer.getMinecraft().delayCrash(new Supplier<CrashReport>() {
+                @Override
+                public CrashReport get() {
+                    return report;
+                }
+            });
         }
         return false;
     }
@@ -76,7 +83,7 @@ public class ScreenshotRenderer implements RenderInfo {
     @Override
     public float updateForNextFrame() {
         framesDone++;
-        return mc.getRenderPartialTicks();
+        return mc.getFrameTime();
     }
 
     @Override

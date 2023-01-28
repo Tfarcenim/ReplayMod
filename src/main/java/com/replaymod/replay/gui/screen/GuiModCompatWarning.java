@@ -1,7 +1,7 @@
 package com.replaymod.replay.gui.screen;
 
 import com.replaymod.core.utils.ModCompat;
-import com.replaymod.gui.container.AbstractGuiScreen;
+import com.replaymod.gui.container.GuiComponentScreen;
 import com.replaymod.gui.container.GuiPanel;
 import com.replaymod.gui.container.GuiVerticalList;
 import com.replaymod.gui.element.GuiButton;
@@ -14,7 +14,7 @@ import com.replaymod.replaystudio.util.I18n;
 
 import java.util.Map;
 
-public class GuiModCompatWarning extends AbstractGuiScreen<GuiModCompatWarning> {
+public class GuiModCompatWarning extends GuiComponentScreen<GuiModCompatWarning> {
     public final GuiVerticalList content = new GuiVerticalList(this).setDrawShadow(true).setDrawSlider(true);
     public final GuiButton loadButton = new GuiButton().setI18nLabel("replaymod.gui.load").setSize(200, 20);
     public final GuiButton cancelButton = new GuiButton().setI18nLabel("gui.cancel").setSize(200, 20);
@@ -78,7 +78,7 @@ public class GuiModCompatWarning extends AbstractGuiScreen<GuiModCompatWarning> 
             }
         }
 
-        cancelButton.onClick(() -> getMinecraft().displayGuiScreen(null));
+        cancelButton.onClick(() -> getMinecraft().setScreen(null));
     }
 
     @Override

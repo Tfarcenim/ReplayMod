@@ -11,8 +11,8 @@ import com.replaymod.replay.ReplayModReplay;
 import com.replaymod.replay.camera.CameraEntity;
 import com.replaymod.replay.events.ReplayClosedCallback;
 import com.replaymod.replay.events.ReplayOpenedCallback;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 
 import java.io.IOException;
 import java.util.*;
@@ -30,18 +30,18 @@ public class PlayerOverview extends EventRegistrations implements Extra {
     public void register(final ReplayMod mod) throws Exception {
         this.module = ReplayModReplay.instance;
 
-        mod.getKeyBindingRegistry().registerKeyBinding("replaymod.input.playeroverview", Keyboard.KEY_B, new Runnable() {
+        mod.getKeyMappingRegistry().registerKeyMapping("replaymod.input.playeroverview", Keyboard.KEY_B, new Runnable() {
             @Override
             public void run() {
                 if (module.getReplayHandler() != null) {
-                    List<PlayerEntity> players = mod.getMinecraft().world.getPlayers()
+                    List<Player> players = mod.getMinecraft().level.players()
                             .stream()
-                            .map(it -> (PlayerEntity) it)
+                            .map(it -> (Player) it)
                             .filter(it -> !(it instanceof CameraEntity))
                             .collect(Collectors.toList());
                     if (!Utils.isCtrlDown()) {
                         // Hide all players that have an UUID v2 (commonly used for NPCs)
-                        Iterator<PlayerEntity> iter = players.iterator();
+                        Iterator<Player> iter = players.iterator();
                         while (iter.hasNext()) {
                             UUID uuid = iter.next().getGameProfile().getId();
                             if (uuid != null && uuid.version() == 2) {
@@ -96,8 +96,8 @@ public class PlayerOverview extends EventRegistrations implements Extra {
     }
 
     private boolean shouldHideHand() {
-        Entity view = module.getCore().getMinecraft().getRenderViewEntity();
-        return view != null && isHidden(view.getUniqueID());
+        Entity view = module.getCore().getMinecraft().getCameraEntity();
+        return view != null && isHidden(view.getUUID());
     }
 
     // See MixinRender for why this is 1.7.10 only

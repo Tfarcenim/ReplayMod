@@ -14,7 +14,7 @@ import com.replaymod.gui.layout.CustomLayout;
 import com.replaymod.gui.layout.GridLayout;
 import com.replaymod.gui.layout.HorizontalLayout;
 import com.replaymod.gui.layout.VerticalLayout;
-import com.replaymod.gui.popup.AbstractGuiPopup;
+import com.replaymod.gui.popup.GuiComponentPopup;
 import com.replaymod.gui.popup.GuiFileChooserPopup;
 import com.replaymod.gui.utils.Colors;
 import com.replaymod.gui.utils.Consumer;
@@ -29,10 +29,10 @@ import de.johni0702.minecraft.gui.utils.lwjgl.Color;
 import de.johni0702.minecraft.gui.utils.lwjgl.Dimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableColor;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
-import net.minecraft.client.gui.screen.AlertScreen;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.crash.CrashReport;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.screens.AlertScreen;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.CrashReport;
+import net.minecraft.network.chat.TranslatableComponent;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -49,7 +49,7 @@ import java.util.Map;
 import static com.replaymod.core.utils.Utils.error;
 import static com.replaymod.render.ReplayModRender.LOGGER;
 
-public class GuiRenderSettings extends AbstractGuiPopup<GuiRenderSettings> {
+public class GuiRenderSettings extends GuiComponentPopup<GuiRenderSettings> {
     {
         disablePopupBackground();
     }
@@ -105,7 +105,7 @@ public class GuiRenderSettings extends AbstractGuiPopup<GuiRenderSettings> {
     public final com.replaymod.gui.element.GuiSlider frameRateSlider = new com.replaymod.gui.element.GuiSlider().onValueChanged(new Runnable() {
         @Override
         public void run() {
-            frameRateSlider.setText(I18n.format("replaymod.gui.rendersettings.framerate")
+            frameRateSlider.setText(I18n.get("replaymod.gui.rendersettings.framerate")
                     + ": " + (frameRateSlider.getValue() + 10));
         }
     }).setSize(122, 20).setSteps(110);
@@ -167,7 +167,7 @@ public class GuiRenderSettings extends AbstractGuiPopup<GuiRenderSettings> {
             .onValueChanged(new Runnable() {
                 @Override
                 public void run() {
-                    sphericalFovSlider.setText(I18n.format("replaymod.gui.rendersettings.sphericalFov")
+                    sphericalFovSlider.setText(I18n.get("replaymod.gui.rendersettings.sphericalFov")
                             + ": " + (MIN_SPHERICAL_FOV + sphericalFovSlider.getValue() * SPHERICAL_FOV_STEP_SIZE) + "°");
 
                     updateInputs();
@@ -241,10 +241,10 @@ public class GuiRenderSettings extends AbstractGuiPopup<GuiRenderSettings> {
                 LOGGER.error("Rendering video:", e);
                 AlertScreen errorScreen = new AlertScreen(
                         getScreen()::display,
-                        new TranslationTextComponent("replaymod.gui.rendering.error.title"),
-                        new TranslationTextComponent("replaymod.gui.rendering.error.message")
+                        new TranslatableComponent("replaymod.gui.rendering.error.title"),
+                        new TranslatableComponent("replaymod.gui.rendering.error.message")
                 );
-                getMinecraft().displayGuiScreen(errorScreen);
+                getMinecraft().setScreen(errorScreen);
             } catch (FFmpegWriter.FFmpegStartupException e) {
                 GuiExportFailed.tryToRecover(e, newSettings -> {
                     // Update settings with fixed ffmpeg arguments
@@ -253,7 +253,7 @@ public class GuiRenderSettings extends AbstractGuiPopup<GuiRenderSettings> {
                     renderButton.onClick();
                 });
             } catch (Throwable t) {
-                error(LOGGER, GuiRenderSettings.this, CrashReport.makeCrashReport(t, "Rendering video"), () -> {
+                error(LOGGER, GuiRenderSettings.this, CrashReport.forThrowable(t, "Rendering video"), () -> {
                 });
                 getScreen().display(); // Re-show the render settings gui and the new error popup
             }
@@ -302,13 +302,13 @@ public class GuiRenderSettings extends AbstractGuiPopup<GuiRenderSettings> {
         });
     }
 
-    private final AbstractGuiScreen<?> screen;
+    private final GuiComponentScreen<?> screen;
     private final ReplayHandler replayHandler;
     private final Timeline timeline;
     private File outputFile;
     private boolean userDefinedOutputFileName;
 
-    public GuiRenderSettings(AbstractGuiScreen<?> container, ReplayHandler replayHandler, Timeline timeline) {
+    public GuiRenderSettings(GuiComponentScreen<?> container, ReplayHandler replayHandler, Timeline timeline) {
         super(container);
         this.screen = container;
         this.replayHandler = replayHandler;
@@ -579,7 +579,7 @@ public class GuiRenderSettings extends AbstractGuiPopup<GuiRenderSettings> {
                 serialize || antiAliasingDropdown.isEnabled() ? antiAliasingDropdown.getSelectedValue() : RenderSettings.AntiAliasing.NONE,
                 exportCommand.getText(),
                 exportArguments.getText(),
-                net.minecraft.client.gui.screen.Screen.hasControlDown()
+                net.minecraft.client.gui.screens.Screen.hasControlDown()
         );
     }
 
@@ -589,7 +589,7 @@ public class GuiRenderSettings extends AbstractGuiPopup<GuiRenderSettings> {
         return new File(folder, fileName + "." + encodingPreset.getFileExtension());
     }
 
-    public AbstractGuiScreen<?> getScreen() {
+    public GuiComponentScreen<?> getScreen() {
         return screen;
     }
 
@@ -652,7 +652,7 @@ public class GuiRenderSettings extends AbstractGuiPopup<GuiRenderSettings> {
 
     public static GuiScreen createBaseScreen() {
         GuiScreen screen = new GuiScreen();
-        screen.setBackground(AbstractGuiScreen.Background.NONE);
+        screen.setBackground(GuiComponentScreen.Background.NONE);
         return screen;
     }
 

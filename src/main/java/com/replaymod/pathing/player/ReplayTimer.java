@@ -2,7 +2,7 @@ package com.replaymod.pathing.player;
 
 import com.replaymod.core.utils.WrappedTimer;
 import com.replaymod.gui.utils.Event;
-import net.minecraft.util.Timer;
+import net.minecraft.client.Timer;
 
 /**
  * Wrapper around the current timer that prevents the timer from advancing by itself.
@@ -19,13 +19,13 @@ public class ReplayTimer extends WrappedTimer {
     @Override
     // This should be handled by Remap but it isn't (was handled before a9724e3).
     public int
-    getPartialTicks(
+    advanceTime(
             long sysClock
     ) {
         copy(this, state); // Save our current state
         try {
             ticksThisFrame =
-                    wrapped.getPartialTicks(
+                    wrapped.advanceTime(
                             sysClock
                     ); // Update current state
         } finally {

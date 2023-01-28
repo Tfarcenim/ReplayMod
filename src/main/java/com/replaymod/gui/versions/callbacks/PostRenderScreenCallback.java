@@ -1,6 +1,6 @@
 package com.replaymod.gui.versions.callbacks;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.replaymod.gui.utils.Event;
 
 public interface PostRenderScreenCallback {
@@ -12,5 +12,5 @@ public interface PostRenderScreenCallback {
             }
     );
 
-    void postRenderScreen(MatrixStack stack, float partialTicks);
+    void postRenderScreen(PoseStack stack, float partialTicks);
 }

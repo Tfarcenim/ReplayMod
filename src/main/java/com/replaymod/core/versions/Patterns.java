@@ -1,179 +1,185 @@
 package com.replaymod.core.versions;
 
+import com.mojang.blaze3d.vertex.VertexFormat;
 import com.replaymod.gradle.remap.Pattern;
-import net.minecraft.client.MainWindow;
+import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.SimpleSound;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.entity.EntityRendererManager;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.gui.components.AbstractWidget;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.Tesselator;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.crash.CrashReportCategory;
-import net.minecraft.crash.ICrashReportDetail;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.SoundEvent;
-import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.CrashReportCategory;
+import net.minecraft.CrashReportDetail;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.LevelChunk;
+import org.blender.dna.World;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 class Patterns {
     @Pattern
-    private static void addCrashCallable(CrashReportCategory category, String name, ICrashReportDetail<String> callable) {
-        category.addDetail(name, callable);
+    private static void addCrashCallable(CrashReportCategory category, String name, CrashReportDetail<String> callable) {
+        category.setDetail(name, callable);
     }
 
     @Pattern
     private static double Entity_getX(Entity entity) {
-        return entity.getPosX();
+        return entity.getX();
     }
 
     @Pattern
     private static double Entity_getY(Entity entity) {
-        return entity.getPosY();
+        return entity.getY();
     }
 
     @Pattern
     private static double Entity_getZ(Entity entity) {
-        return entity.getPosZ();
+        return entity.getZ();
     }
 
     @Pattern
     private static void Entity_setPos(Entity entity, double x, double y, double z) {
-        entity.setRawPosition(x, y, z);
+        entity.setPosRaw(x, y, z);
     }
 
     @Pattern
-    private static void setWidth(Widget button, int value) {
+    private static void setWidth(AbstractWidget button, int value) {
         button.setWidth(value);
     }
 
     @Pattern
-    private static int getWidth(Widget button) {
+    private static int getWidth(AbstractWidget button) {
         return button.getWidth();
     }
 
     @Pattern
-    private static int getHeight(Widget button) {
+    private static int getHeight(AbstractWidget button) {
         return button.getHeight();
     }
 
     @Pattern
-    private static String readString(PacketBuffer buffer, int max) {
-        return buffer.readString(max);
+    private static String readString(FriendlyByteBuf buffer, int max) {
+        return buffer.readUtf(max);
     }
 
     @Pattern
     private static Entity getRenderViewEntity(Minecraft mc) {
-        return mc.getRenderViewEntity();
+        return mc.getCameraEntity();
     }
 
     @Pattern
-    private static void setRenderViewEntity(Minecraft mc, Entity entity) {
-        mc.setRenderViewEntity(entity);
+    private static void setCameraEntity(Minecraft mc, Entity entity) {
+        mc.setCameraEntity(entity);
     }
 
     @Pattern
     private static Entity getVehicle(Entity passenger) {
-        return passenger.getRidingEntity();
+        return passenger.getVehicle();
     }
 
     @Pattern
-    private static Iterable<Entity> loadedEntityList(ClientWorld world) {
-        return world.getAllEntities();
+    private static Iterable<Entity> loadedEntityList(ClientLevel world) {
+        return world.entitiesForRendering();
     }
 
     @Pattern
-    private static Collection<Entity>[] getEntitySectionArray(Chunk chunk) {
-        return chunk.getEntityLists();
+    private static Collection<Entity>[] getEntitySectionArray(LevelChunk chunk) {
+        ArrayList<Entity> arrayList = new ArrayList<Entity>();
+        return (Collection<Entity>[]) Array.newInstance(arrayList.getClass(),0);
     }
 
     @Pattern
-    private static List<? extends PlayerEntity> playerEntities(World world) {
-        return world.getPlayers();
+    private static List<? extends Player> playerEntities(Level world) {
+        return world.players();
     }
 
     @Pattern
     private static boolean isOnMainThread(Minecraft mc) {
-        return mc.isOnExecutionThread();
+        return mc.isSameThread();
     }
 
     @Pattern
     private static void scheduleOnMainThread(Minecraft mc, Runnable runnable) {
-        mc.enqueue(runnable);
+        mc.execute(runnable);
     }
 
     @Pattern
-    private static MainWindow getWindow(Minecraft mc) {
-        return mc.getMainWindow();
+    private static Window getWindow(Minecraft mc) {
+        return mc.getWindow();
     }
 
     @Pattern
-    private static BufferBuilder Tessellator_getBuffer(Tessellator tessellator) {
-        return tessellator.getBuffer();
+    private static BufferBuilder Tesselator_getBuffer(Tesselator tessellator) {
+        return tessellator.getBuilder();
     }
 
     @Pattern
-    private static void BufferBuilder_beginPosCol(BufferBuilder buffer, int mode) {
-        buffer.begin(mode, DefaultVertexFormats.POSITION_COLOR);
+    private static void BufferBuilder_beginPosCol(BufferBuilder buffer, VertexFormat.Mode mode) {
+        buffer.begin(mode, DefaultVertexFormat.POSITION_COLOR);
     }
 
     @Pattern
     private static void BufferBuilder_addPosCol(BufferBuilder buffer, double x, double y, double z, int r, int g, int b, int a) {
-        buffer.pos(x, y, z).color(r, g, b, a).endVertex();
+        buffer.vertex(x, y, z).color(r, g, b, a).endVertex();
     }
 
     @Pattern
-    private static void BufferBuilder_beginPosTex(BufferBuilder buffer, int mode) {
-        buffer.begin(mode, DefaultVertexFormats.POSITION_TEX);
+    private static void BufferBuilder_beginPosTex(BufferBuilder buffer, VertexFormat.Mode mode) {
+        buffer.begin(mode, DefaultVertexFormat.POSITION_TEX);
     }
 
     @Pattern
     private static void BufferBuilder_addPosTex(BufferBuilder buffer, double x, double y, double z, float u, float v) {
-        buffer.pos(x, y, z).tex(u, v).endVertex();
+        buffer.vertex(x, y, z).uv(u, v).endVertex();
     }
 
     @Pattern
-    private static void BufferBuilder_beginPosTexCol(BufferBuilder buffer, int mode) {
-        buffer.begin(mode, DefaultVertexFormats.POSITION_TEX_COLOR);
+    private static void BufferBuilder_beginPosTexCol(BufferBuilder buffer, VertexFormat.Mode mode) {
+        buffer.begin(mode, DefaultVertexFormat.POSITION_TEX_COLOR);
     }
 
     @Pattern
     private static void BufferBuilder_addPosTexCol(BufferBuilder buffer, double x, double y, double z, float u, float v, int r, int g, int b, int a) {
-        buffer.pos(x, y, z).tex(u, v).color(r, g, b, a).endVertex();
+        buffer.vertex(x, y, z).uv(u, v).color(r, g, b, a).endVertex();
     }
 
     @Pattern
-    private static Tessellator Tessellator_getInstance() {
-        return Tessellator.getInstance();
+    private static Tesselator Tesselator_getInstance() {
+        return Tesselator.getInstance();
     }
 
     @Pattern
-    private static EntityRendererManager getEntityRenderDispatcher(Minecraft mc) {
-        return mc.getRenderManager();
+    private static EntityRenderDispatcher getEntityRenderDispatcher(Minecraft mc) {
+        return mc.getEntityRenderDispatcher();
     }
 
     @Pattern
-    private static float getCameraYaw(EntityRendererManager dispatcher) {
-        return dispatcher.info.getYaw();
+    private static float getCameraYaw(EntityRenderDispatcher dispatcher) {
+        return dispatcher.camera.getXRot();
     }
 
     @Pattern
-    private static float getCameraPitch(EntityRendererManager dispatcher) {
-        return dispatcher.info.getPitch();
+    private static float getCameraPitch(EntityRenderDispatcher dispatcher) {
+        return dispatcher.camera.getYRot();
     }
 
     @Pattern
     private static float getRenderPartialTicks(Minecraft mc) {
-        return mc.getRenderPartialTicks();
+        return mc.getFrameTime();
     }
 
     @Pattern
@@ -182,17 +188,17 @@ class Patterns {
     }
 
     @Pattern
-    private static String getBoundKeyName(KeyBinding keyBinding) {
-        return keyBinding.func_238171_j_().getString();
+    private static String getBoundKeyName(KeyMapping keyBinding) {
+        return keyBinding.getTranslatedKeyMessage().getString();
     }
 
     @Pattern
-    private static SimpleSound master(ResourceLocation sound, float pitch) {
-        return SimpleSound.master(new SoundEvent(sound), pitch);
+    private static SimpleSoundInstance master(ResourceLocation sound, float pitch) {
+        return SimpleSoundInstance.forUI(new SoundEvent(sound), pitch);
     }
 
     @Pattern
-    private static boolean isKeyBindingConflicting(KeyBinding a, KeyBinding b) {
-        return a.conflicts(b);
+    private static boolean isKeyMappingConflicting(KeyMapping a, KeyMapping b) {
+        return a.same(b);
     }
 }

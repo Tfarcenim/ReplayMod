@@ -1,7 +1,7 @@
 package com.replaymod.gui.versions;
 
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.client.renderer.texture.NativeImage;
+import com.mojang.blaze3d.platform.NativeImage;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -19,7 +19,7 @@ public class Image implements AutoCloseable {
 
     public Image(int width, int height) {
         this(
-                new NativeImage(NativeImage.PixelFormat.RGBA, width, height, true)
+                new NativeImage(NativeImage.Format.RGBA, width, height, true)
         );
     }
 
@@ -68,13 +68,13 @@ public class Image implements AutoCloseable {
     }
 
     public void writePNG(File file) throws IOException {
-        inner.write(file);
+        inner.writeToFile(file);
     }
 
     public void writePNG(OutputStream outputStream) throws IOException {
         Path tmp = Files.createTempFile("tmp", ".png");
         try {
-            inner.write(tmp);
+            inner.writeToFile(tmp);
             Files.copy(tmp, outputStream);
         } finally {
             Files.delete(tmp);
@@ -82,7 +82,7 @@ public class Image implements AutoCloseable {
     }
 
     public Image scaledSubRect(int x, int y, int width, int height, int scaledWidth, int scaledHeight) {
-        NativeImage dst = new NativeImage(inner.getFormat(), scaledWidth, scaledHeight, false);
+        NativeImage dst = new NativeImage(inner.format(), scaledWidth, scaledHeight, false);
         inner.resizeSubRectTo(x, y, width, height, dst);
         return new Image(dst);
     }

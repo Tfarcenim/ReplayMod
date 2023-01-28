@@ -24,13 +24,13 @@
  */
 package com.replaymod.gui;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.replaymod.gui.utils.NonNull;
 import de.johni0702.minecraft.gui.utils.lwjgl.Point;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableColor;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
 public class OffsetGuiRenderer implements com.replaymod.gui.GuiRenderer {
@@ -94,8 +94,8 @@ public class OffsetGuiRenderer implements com.replaymod.gui.GuiRenderer {
     }
 
     @Override
-    public MatrixStack getMatrixStack() {
-        return renderer.getMatrixStack();
+    public PoseStack getPoseStack() {
+        return renderer.getPoseStack();
     }
 
     @Override

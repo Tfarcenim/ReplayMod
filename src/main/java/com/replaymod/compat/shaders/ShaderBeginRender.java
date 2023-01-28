@@ -20,20 +20,27 @@ public class ShaderBeginRender extends EventRegistrations {
     }
 
     private void onRenderTickStart() {
-        if (ShaderReflection.shaders_beginRender == null) return;
-        if (ShaderReflection.config_isShaders == null) return;
+        if (ShaderReflection.shaders_beginRender == null) {
+            return;
+        }
+        if (ShaderReflection.config_isShaders == null) {
+            return;
+        }
 
         try {
             // check if video is being rendered
-            if (((EntityRendererHandler.IEntityRenderer) mc.gameRenderer).replayModRender_getHandler() == null)
+            if (((EntityRendererHandler.IEntityRenderer) mc.gameRenderer).replayModRender_getHandler() == null) {
                 return;
+            }
 
             // check if Shaders are enabled
-            if (!(boolean) (ShaderReflection.config_isShaders.invoke(null))) return;
+            if (!(boolean) (ShaderReflection.config_isShaders.invoke(null))) {
+                return;
+            }
 
             ShaderReflection.shaders_beginRender.invoke(null, mc,
-                    mc.gameRenderer.getActiveRenderInfo(),
-                    mc.getRenderPartialTicks(), 0);
+                    mc.gameRenderer.getMainCamera(),
+                    mc.getFrameTime(), 0);
         } catch (IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
         }

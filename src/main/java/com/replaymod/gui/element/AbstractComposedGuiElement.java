@@ -30,7 +30,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public abstract class AbstractComposedGuiElement<T extends AbstractComposedGuiElement<T>>
-        extends AbstractGuiElement<T> implements ComposedGuiElement<T> {
+        extends GuiComponentElement<T> implements ComposedGuiElement<T> {
     public AbstractComposedGuiElement() {
     }
 

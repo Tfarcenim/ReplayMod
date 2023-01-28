@@ -37,7 +37,7 @@ import de.johni0702.minecraft.gui.utils.lwjgl.Dimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;
 
 
-public class GuiInfoPopup extends AbstractGuiPopup<GuiInfoPopup> implements Typeable {
+public class GuiInfoPopup extends GuiComponentPopup<GuiInfoPopup> implements Typeable {
     public static GuiInfoPopup open(com.replaymod.gui.container.GuiContainer container, String... info) {
         com.replaymod.gui.element.GuiElement[] labels = new com.replaymod.gui.element.GuiElement[info.length];
         for (int i = 0; i < info.length; i++) {

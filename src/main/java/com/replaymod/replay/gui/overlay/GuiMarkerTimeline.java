@@ -4,7 +4,7 @@ import com.replaymod.core.ReplayMod;
 import com.replaymod.core.versions.MCVer.Keyboard;
 import com.replaymod.gui.GuiRenderer;
 import com.replaymod.gui.RenderInfo;
-import com.replaymod.gui.element.advanced.AbstractGuiTimeline;
+import com.replaymod.gui.element.advanced.GuiComponentTimeline;
 import com.replaymod.gui.function.Draggable;
 import com.replaymod.gui.function.Typeable;
 import com.replaymod.replay.ReplayHandler;
@@ -15,7 +15,7 @@ import com.replaymod.replaystudio.util.Location;
 import de.johni0702.minecraft.gui.utils.lwjgl.Point;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;
-import net.minecraft.client.resources.I18n;
+import net.minecraft.client.resources.language.I18n;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 
 import static com.replaymod.gui.utils.Utils.clamp;
 
-public class GuiMarkerTimeline extends AbstractGuiTimeline<GuiMarkerTimeline> implements Draggable, Typeable {
+public class GuiMarkerTimeline extends GuiComponentTimeline<GuiMarkerTimeline> implements Draggable, Typeable {
     protected static final int TEXTURE_MARKER_X = 109;
     protected static final int TEXTURE_MARKER_Y = 20;
     protected static final int TEXTURE_MARKER_SELECTED_X = 114;
@@ -223,7 +223,7 @@ public class GuiMarkerTimeline extends AbstractGuiTimeline<GuiMarkerTimeline> im
     protected String getTooltipText(RenderInfo renderInfo) {
         Marker marker = getMarkerAt(renderInfo.mouseX, renderInfo.mouseY);
         if (marker != null) {
-            return marker.getName() != null ? marker.getName() : I18n.format("replaymod.gui.ingame.unnamedmarker");
+            return marker.getName() != null ? marker.getName() : I18n.get("replaymod.gui.ingame.unnamedmarker");
         }
         return super.getTooltipText(renderInfo);
     }

@@ -24,9 +24,9 @@ import com.replaymod.replaystudio.pathing.property.Property;
 import com.replaymod.replaystudio.util.EntityPositionTracker;
 import com.replaymod.replaystudio.util.Location;
 import com.replaymod.simplepathing.properties.ExplicitInterpolationProperty;
-import net.minecraft.crash.CrashReport;
-import net.minecraft.crash.CrashReportCategory;
-import net.minecraft.crash.ReportedException;
+import net.minecraft.CrashReport;
+import net.minecraft.CrashReportCategory;
+import net.minecraft.ReportedException;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Triple;
@@ -661,9 +661,9 @@ public class SPTimeline implements PathingRegistry {
             jsonWriter.endArray();
             jsonWriter.flush();
         } catch (IOException e) {
-            CrashReport crash = CrashReport.makeCrashReport(e, "Serializing interpolator");
-            CrashReportCategory category = crash.makeCategory("Serializing interpolator");
-            category.addDetail("Interpolator", interpolator::toString);
+            CrashReport crash = CrashReport.forThrowable(e, "Serializing interpolator");
+            CrashReportCategory category = crash.addCategory("Serializing interpolator");
+            category.setDetail("Interpolator", interpolator::toString);
             throw new ReportedException(crash);
         }
 
@@ -676,9 +676,9 @@ public class SPTimeline implements PathingRegistry {
             jsonReader.beginArray();
             return deserializeInterpolator(jsonReader);
         } catch (IOException e) {
-            CrashReport crash = CrashReport.makeCrashReport(e, "De-serializing interpolator");
-            CrashReportCategory category = crash.makeCategory("De-serializing interpolator");
-            category.addDetail("Interpolator", json::toString);
+            CrashReport crash = CrashReport.forThrowable(e, "De-serializing interpolator");
+            CrashReportCategory category = crash.addCategory("De-serializing interpolator");
+            category.setDetail("Interpolator", json::toString);
             throw new ReportedException(crash);
         }
     }

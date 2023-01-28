@@ -2,7 +2,7 @@ package com.replaymod.mixin;
 
 import com.replaymod.recording.ServerInfoExt;
 import net.minecraft.client.multiplayer.ServerData;
-import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.CompoundTag;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -23,16 +23,16 @@ public abstract class MixinServerInfo implements ServerInfoExt {
         this.autoRecording = autoRecording;
     }
 
-    @Inject(method = "getNBTCompound", at = @At("RETURN"))
-    private void serialize(CallbackInfoReturnable<CompoundNBT> ci) {
-        CompoundNBT tag = ci.getReturnValue();
+    @Inject(method = "write", at = @At("RETURN"))
+    private void serialize(CallbackInfoReturnable<CompoundTag> ci) {
+        CompoundTag tag = ci.getReturnValue();
         if (autoRecording != null) {
             tag.putBoolean("autoRecording", autoRecording);
         }
     }
 
-    @Inject(method = "getServerDataFromNBTCompound", at = @At("RETURN"))
-    private static void deserialize(CompoundNBT tag, CallbackInfoReturnable<ServerData> ci) {
+    @Inject(method = "read", at = @At("RETURN"))
+    private static void deserialize(CompoundTag tag, CallbackInfoReturnable<ServerData> ci) {
         ServerInfoExt serverInfo = ServerInfoExt.from(ci.getReturnValue());
         if (tag.contains("autoRecording")) {
             serverInfo.setAutoRecording(tag.getBoolean("autoRecording"));

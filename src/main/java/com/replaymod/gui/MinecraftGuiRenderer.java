@@ -24,15 +24,15 @@
  */
 package com.replaymod.gui;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.replaymod.gui.utils.NonNull;
 import de.johni0702.minecraft.gui.utils.lwjgl.Color;
 import de.johni0702.minecraft.gui.utils.lwjgl.*;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.AbstractGui;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.gui.Font;
+import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
 import static com.mojang.blaze3d.platform.GlStateManager.*;
@@ -40,18 +40,18 @@ import static org.lwjgl.opengl.GL11.*;
 
 public class MinecraftGuiRenderer implements GuiRenderer {
 
-    private final AbstractGui gui = new AbstractGui() {
+    private final GuiComponent gui = new GuiComponent() {
     };
     private final Minecraft mc = com.replaymod.gui.versions.MCVer.getMinecraft();
 
-    private final MatrixStack matrixStack;
+    private final PoseStack matrixStack;
 
     @NonNull
-    private final int scaledWidth = com.replaymod.gui.versions.MCVer.newScaledResolution(mc).getScaledWidth();
-    private final int scaledHeight = com.replaymod.gui.versions.MCVer.newScaledResolution(mc).getScaledHeight();
-    private final double scaleFactor = com.replaymod.gui.versions.MCVer.newScaledResolution(mc).getGuiScaleFactor();
+    private final int scaledWidth = com.replaymod.gui.versions.MCVer.newScaledResolution(mc).getGuiScaledWidth();
+    private final int scaledHeight = com.replaymod.gui.versions.MCVer.newScaledResolution(mc).getGuiScaledHeight();
+    private final double scaleFactor = com.replaymod.gui.versions.MCVer.newScaledResolution(mc).getGuiScale();
 
-    public MinecraftGuiRenderer(MatrixStack matrixStack) {
+    public MinecraftGuiRenderer(PoseStack matrixStack) {
         this.matrixStack = matrixStack;
     }
 
@@ -61,7 +61,7 @@ public class MinecraftGuiRenderer implements GuiRenderer {
     }
 
     @Override
-    public MatrixStack getMatrixStack() {
+    public PoseStack getPoseStack() {
         return matrixStack;
     }
 
@@ -96,12 +96,12 @@ public class MinecraftGuiRenderer implements GuiRenderer {
 
     @Override
     public void bindTexture(ResourceLocation location) {
-        com.replaymod.gui.versions.MCVer.getMinecraft().getTextureManager().bindTexture(location);
+        com.replaymod.gui.versions.MCVer.getMinecraft().getTextureManager().bindForSetup(location);
     }
 
     @Override
     public void bindTexture(int glId) {
-        GlStateManager.bindTexture(glId);
+        GlStateManager._bindTexture(glId);
     }
 
     @Override
@@ -112,16 +112,16 @@ public class MinecraftGuiRenderer implements GuiRenderer {
     @Override
     public void drawTexturedRect(int x, int y, int u, int v, int width, int height, int uWidth, int vHeight, int textureWidth, int textureHeight) {
         color(1, 1, 1);
-        AbstractGui.blit(matrixStack, x, y, width, height, u, v, uWidth, vHeight, textureWidth, textureHeight);
+        GuiComponent.blit(matrixStack, x, y, width, height, u, v, uWidth, vHeight, textureWidth, textureHeight);
     }
 
     @Override
     public void drawRect(int x, int y, int width, int height, int color) {
-        AbstractGui.fill(
+        GuiComponent.fill(
                 matrixStack,
                 x, y, x + width, y + height, color);
         color(1, 1, 1);
-        enableBlend();
+        _enableBlend();
     }
 
     @Override
@@ -136,15 +136,15 @@ public class MinecraftGuiRenderer implements GuiRenderer {
 
     @Override
     public void drawRect(int x, int y, int width, int height, ReadableColor tl, ReadableColor tr, ReadableColor bl, ReadableColor br) {
-        disableTexture();
-        enableBlend();
-        disableAlphaTest();
-        blendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, 1, 0);
-        shadeModel(GL_SMOOTH);
+        _disableTexture();
+        _enableBlend();
+        _disableDepthTest();
+        _blendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, 1, 0);
+        //shadeModel(GL_SMOOTH);
         com.replaymod.gui.versions.MCVer.drawRect(x, y, width, height, tl, tr, bl, br);
-        shadeModel(GL_FLAT);
-        enableAlphaTest();
-        enableTexture();
+        //shadeModel(GL_FLAT);
+        _enableDepthTest();
+        _enableTexture();
     }
 
     @Override
@@ -169,14 +169,14 @@ public class MinecraftGuiRenderer implements GuiRenderer {
 
     @Override
     public int drawString(int x, int y, int color, String text, boolean shadow) {
-        FontRenderer fontRenderer = com.replaymod.gui.versions.MCVer.getFontRenderer();
+        Font fontRenderer = com.replaymod.gui.versions.MCVer.getFont();
         try {
             if (shadow) {
-                return fontRenderer.drawStringWithShadow(
+                return fontRenderer.drawShadow(
                         matrixStack,
                         text, x, y, color);
             } else {
-                return fontRenderer.drawString(
+                return fontRenderer.draw(
                         matrixStack,
                         text, x, y, color);
             }
@@ -192,8 +192,8 @@ public class MinecraftGuiRenderer implements GuiRenderer {
 
     @Override
     public int drawCenteredString(int x, int y, int color, String text, boolean shadow) {
-        FontRenderer fontRenderer = com.replaymod.gui.versions.MCVer.getFontRenderer();
-        x -= fontRenderer.getStringWidth(text) / 2;
+        Font fontRenderer = com.replaymod.gui.versions.MCVer.getFont();
+        x -= fontRenderer.width(text) / 2;
         return drawString(x, y, color, text, shadow);
     }
 
@@ -214,22 +214,24 @@ public class MinecraftGuiRenderer implements GuiRenderer {
     }
 
     private void color(int r, int g, int b) {
-        GlStateManager.color4f(r, g, b, 1);
+        GlStateManager._clearColor(r, g, b, 1);
     }
 
     @Override
     public void invertColors(int right, int bottom, int left, int top) {
-        if (left >= right || top >= bottom) return;
+        if (left >= right || top >= bottom) {
+            return;
+        }
 
         color(0, 0, 1);
-        disableTexture();
-        enableColorLogicOp();
-        logicOp(GL11.GL_OR_REVERSE);
+        _disableTexture();
+        _enableColorLogicOp();
+        _logicOp(GL11.GL_OR_REVERSE);
 
         com.replaymod.gui.versions.MCVer.drawRect(right, bottom, left, top);
 
-        disableColorLogicOp();
-        enableTexture();
+        _disableColorLogicOp();
+        _enableTexture();
         color(1, 1, 1);
     }
 }

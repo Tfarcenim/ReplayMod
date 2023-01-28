@@ -127,6 +127,8 @@ minecraft {
 
     //mappings channel: 'snapshot', version: '20210309-1.16.4'
     mappings channel: 'parchment', version: '2022.11.06-1.18.2'
+
+    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
 }
 
 repositories {
@@ -156,7 +158,7 @@ configurations {
 }
 
 dependencies {
-    def mixinVersion = '0.8.2'
+    def mixinVersion = '0.8.5'
     def shadeExclusions = {
         // Cannot just add these to the shade configuration because they'd be inherited by the compile configuration then
         exclude group: 'com.google.guava', module: 'guava-jdk5'
@@ -331,28 +333,5 @@ processResources {
     // exclude mod meta for non-applicable loader
     exclude 'fabric.mod.json'
 }
-
-task copySrg(dependsOn: 'createMcpToSrg') {
-    doLast {
-        def tsrg = file(project.tasks.createMcpToSrg.output).readLines()
-        def srg = []
-        def cls = ''
-        for (def line : tsrg) {
-            if (line[0] != '\t') {
-                srg.add('CL: ' + line)
-                cls = line.split(' ')[0]
-            } else {
-                def parts = line.substring(1).split(' ')
-                if (line.contains('(')) {
-                    srg.add('MD: ' + cls + '/' + parts[0] + ' ' + parts[1] + ' ' + cls + '/' + parts[2] + ' ' + parts[1])
-                } else {
-                    srg.add('FD: ' + cls + '/' + parts[0] + ' ' + cls + '/' + parts[1])
-                }
-            }
-        }
-        new File(project.buildDir, 'mcp-srg.srg').write(srg.join('\n'))
-    }
-}
-compileJava.dependsOn copySrg
 
 defaultTasks 'build'

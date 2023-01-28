@@ -1,7 +1,7 @@
 package com.replaymod.simplepathing.gui;
 
 import com.replaymod.core.versions.MCVer.Keyboard;
-import com.replaymod.gui.container.AbstractGuiContainer;
+import com.replaymod.gui.container.GuiComponentContainer;
 import com.replaymod.gui.container.GuiPanel;
 import com.replaymod.gui.element.*;
 import com.replaymod.gui.element.advanced.GuiDropdownMenu;
@@ -9,7 +9,7 @@ import com.replaymod.gui.function.Typeable;
 import com.replaymod.gui.layout.GridLayout;
 import com.replaymod.gui.layout.HorizontalLayout;
 import com.replaymod.gui.layout.VerticalLayout;
-import com.replaymod.gui.popup.AbstractGuiPopup;
+import com.replaymod.gui.popup.GuiComponentPopup;
 import com.replaymod.gui.utils.Colors;
 import com.replaymod.gui.utils.Consumer;
 import com.replaymod.pathing.properties.CameraProperties;
@@ -30,7 +30,7 @@ import com.replaymod.simplepathing.SPTimeline.SPPath;
 import com.replaymod.simplepathing.Setting;
 import com.replaymod.simplepathing.properties.ExplicitInterpolationProperty;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;
-import net.minecraft.client.resources.I18n;
+import net.minecraft.client.resources.language.I18n;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -39,7 +39,7 @@ import java.util.Optional;
 
 import static com.replaymod.gui.utils.Utils.link;
 
-public abstract class GuiEditKeyframe<T extends GuiEditKeyframe<T>> extends AbstractGuiPopup<T> implements Typeable {
+public abstract class GuiEditKeyframe<T extends GuiEditKeyframe<T>> extends GuiComponentPopup<T> implements Typeable {
     private static GuiNumberField newGuiNumberField() {
         return new GuiNumberField().setPrecision(0).setValidateOnFocusChange(true);
     }
@@ -270,7 +270,7 @@ public abstract class GuiEditKeyframe<T extends GuiEditKeyframe<T>> extends Abst
             return this;
         }
 
-        public class InterpolationPanel extends AbstractGuiContainer<InterpolationPanel> {
+        public class InterpolationPanel extends GuiComponentContainer<InterpolationPanel> {
 
             private SettingsPanel settingsPanel;
 
@@ -280,7 +280,7 @@ public abstract class GuiEditKeyframe<T extends GuiEditKeyframe<T>> extends Abst
                 setLayout(new VerticalLayout());
 
                 dropdown = new GuiDropdownMenu<InterpolatorType>()
-                        .setToString(s -> I18n.format(s.getI18nName()))
+                        .setToString(s -> I18n.get(s.getI18nName()))
                         .setValues(InterpolatorType.values()).setHeight(20)
                         .onSelection(i -> setSettingsPanel(dropdown.getSelectedValue()));
 
@@ -358,7 +358,7 @@ public abstract class GuiEditKeyframe<T extends GuiEditKeyframe<T>> extends Abst
                 return this;
             }
 
-            public abstract class SettingsPanel<I extends Interpolator, T extends SettingsPanel<I, T>> extends AbstractGuiContainer<T> {
+            public abstract class SettingsPanel<I extends Interpolator, T extends SettingsPanel<I, T>> extends GuiComponentContainer<T> {
 
                 public abstract void loadSettings(I interpolator);
 

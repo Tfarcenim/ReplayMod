@@ -19,7 +19,7 @@ public class QuickMode extends EventRegistrations implements Extra {
     public void register(final ReplayMod mod) {
         this.module = ReplayModReplay.instance;
 
-        mod.getKeyBindingRegistry().registerKeyBinding("replaymod.input.quickmode", Keyboard.KEY_Q, () -> {
+        mod.getKeyMappingRegistry().registerKeyMapping("replaymod.input.quickmode", Keyboard.KEY_Q, () -> {
             ReplayHandler replayHandler = module.getReplayHandler();
             if (replayHandler == null) {
                 return;

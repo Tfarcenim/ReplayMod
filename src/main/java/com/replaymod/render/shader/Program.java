@@ -1,8 +1,8 @@
 package com.replaymod.render.shader;
 
 import com.replaymod.core.versions.MCVer;
-import net.minecraft.resources.IResource;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.io.IOUtils;
 import org.lwjgl.opengl.ARBFragmentShader;
 import org.lwjgl.opengl.ARBShaderObjects;
@@ -44,17 +44,19 @@ public class Program {
         try {
             shader = glCreateShaderObjectARB(shaderType);
 
-            if (shader == 0)
+            if (shader == 0) {
                 throw new Exception("glCreateShaderObjectARB failed");
+            }
 
-            IResource resource = MCVer.getMinecraft().getResourceManager().getResource(resourceLocation);
+            Resource resource = MCVer.getMinecraft().getResourceManager().getResource(resourceLocation);
             try (InputStream is = resource.getInputStream()) {
                 glShaderSourceARB(shader, IOUtils.toString(is));
             }
             glCompileShaderARB(shader);
 
-            if (glGetObjectParameteriARB(shader, GL_OBJECT_COMPILE_STATUS_ARB) == GL11.GL_FALSE)
+            if (glGetObjectParameteriARB(shader, GL_OBJECT_COMPILE_STATUS_ARB) == GL11.GL_FALSE) {
                 throw new RuntimeException("Error creating shader: " + getLogInfo(shader));
+            }
 
             return shader;
         } catch (Exception exc) {

@@ -1,9 +1,9 @@
 package com.replaymod.mixin;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.replaymod.render.capturer.CubicOpenGlFrameCapturer;
 import com.replaymod.render.hooks.EntityRendererHandler;
-import net.minecraft.util.math.vector.Vector3f;
+import com.mojang.math.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -17,11 +17,11 @@ public abstract class Mixin_Omnidirectional_Rotation {
         return ((EntityRendererHandler.IEntityRenderer) getMinecraft().gameRenderer).replayModRender_getHandler();
     }
 
-    @Inject(method = "renderWorld", at = @At("HEAD"))
+    @Inject(method = "renderLevel", at = @At("HEAD"))
     private void replayModRender_setupCubicFrameRotation(
             float partialTicks,
             long frameStartNano,
-            MatrixStack matrixStack,
+            PoseStack matrixStack,
             CallbackInfo ci
     ) {
         if (getHandler() != null && getHandler().data instanceof CubicOpenGlFrameCapturer.Data) {
@@ -55,7 +55,7 @@ public abstract class Mixin_Omnidirectional_Rotation {
                     x = 1;
                     break;
             }
-            matrixStack.rotate(new Vector3f(x, y, 0).rotationDegrees(angle));
+            matrixStack.mulPose(new Vector3f(x, y, 0).rotationDegrees(angle));
         }
     }
 }

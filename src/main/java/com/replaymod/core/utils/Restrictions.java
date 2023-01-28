@@ -1,8 +1,8 @@
 package com.replaymod.core.utils;
 
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.network.play.server.SCustomPayloadPlayPacket;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket;
+import net.minecraft.resources.ResourceLocation;
 
 
 /**
@@ -17,10 +17,10 @@ public class Restrictions {
     private boolean onlyFirstPerson;
     private boolean onlyRecordingPlayer;
 
-    public String handle(SCustomPayloadPlayPacket packet) {
-        PacketBuffer buffer = packet.getBufferData();
+    public String handle(ClientboundCustomPayloadPacket packet) {
+        FriendlyByteBuf buffer = packet.getData();
         while (buffer.isReadable()) {
-            String name = buffer.readString(64);
+            String name = buffer.readUtf(64);
             boolean active = buffer.readBoolean();
 //            if ("no_xray".equals(name)) {
 //                noXray = active;

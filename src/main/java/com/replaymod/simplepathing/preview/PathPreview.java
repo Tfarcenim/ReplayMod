@@ -1,6 +1,6 @@
 package com.replaymod.simplepathing.preview;
 
-import com.replaymod.core.KeyBindingRegistry;
+import com.replaymod.core.KeyMappingRegistry;
 import com.replaymod.core.SettingsRegistry;
 import com.replaymod.core.events.SettingsChangedCallback;
 import com.replaymod.core.versions.MCVer.Keyboard;
@@ -37,8 +37,8 @@ public class PathPreview extends EventRegistrations {
         });
     }
 
-    public void registerKeyBindings(KeyBindingRegistry registry) {
-        registry.registerKeyBinding("replaymod.input.pathpreview", Keyboard.KEY_H, () -> {
+    public void registerKeyMappings(KeyMappingRegistry registry) {
+        registry.registerKeyMapping("replaymod.input.pathpreview", Keyboard.KEY_H, () -> {
             SettingsRegistry settings = mod.getCore().getSettingsRegistry();
             settings.set(Setting.PATH_PREVIEW, !settings.get(Setting.PATH_PREVIEW));
             settings.save();

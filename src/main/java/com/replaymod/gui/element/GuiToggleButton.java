@@ -26,7 +26,7 @@ package com.replaymod.gui.element;
 
 import com.replaymod.gui.container.GuiContainer;
 
-public class GuiToggleButton<V> extends AbstractGuiToggleButton<V, GuiToggleButton<V>> {
+public class GuiToggleButton<V> extends GuiComponentToggleButton<V, GuiToggleButton<V>> {
     public GuiToggleButton() {
     }
 

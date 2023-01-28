@@ -15,7 +15,7 @@ import com.replaymod.replaystudio.pathing.path.Keyframe;
 import com.replaymod.replaystudio.pathing.path.Path;
 import com.replaymod.replaystudio.pathing.path.Timeline;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.Timer;
+import net.minecraft.client.Timer;
 
 import javax.annotation.Nullable;
 import java.util.Iterator;
@@ -82,7 +82,7 @@ public abstract class AbstractTimelinePlayer extends EventRegistrations {
         //noinspection ConstantConditions
         TimerAccessor timerA = (TimerAccessor) timer;
         timerA.setTickLength(WrappedTimer.DEFAULT_MS_PER_TICK);
-        timer.renderPartialTicks = timer.ticksThisFrame = 0;
+        timer.partialTick = timer.ticksThisFrame = 0;
         return future = settableFuture = SettableFuture.create();
     }
 
@@ -131,9 +131,9 @@ public abstract class AbstractTimelinePlayer extends EventRegistrations {
         Timer renderTickCounter = ((MinecraftAccessor) mc).getTimer();
         if (renderTickCounter instanceof ReplayTimer) {
             ReplayTimer timer = (ReplayTimer) renderTickCounter;
-            timer.renderPartialTicks += passedTicks;
-            timer.ticksThisFrame = (int) timer.renderPartialTicks;
-            timer.renderPartialTicks -= timer.ticksThisFrame;
+            timer.partialTick += passedTicks;
+            timer.ticksThisFrame = (int) timer.partialTick;
+            timer.partialTick -= timer.ticksThisFrame;
         }
 
         lastTime = replayTime;

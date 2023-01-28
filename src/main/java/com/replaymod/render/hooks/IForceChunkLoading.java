@@ -1,11 +1,11 @@
 package com.replaymod.render.hooks;
 
-import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.renderer.LevelRenderer;
 
 public interface IForceChunkLoading {
     void replayModRender_setHook(ForceChunkLoadingHook hook);
 
-    static IForceChunkLoading from(WorldRenderer worldRenderer) {
-        return (IForceChunkLoading) worldRenderer;
+    static IForceChunkLoading from(LevelRenderer levelRenderer) {
+        return (IForceChunkLoading) levelRenderer;
     }
 }

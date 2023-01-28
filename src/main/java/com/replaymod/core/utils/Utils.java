@@ -8,7 +8,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.replaymod.core.ReplayMod;
 import com.replaymod.gui.GuiRenderer;
 import com.replaymod.gui.RenderInfo;
-import com.replaymod.gui.container.AbstractGuiScrollable;
+import com.replaymod.gui.container.GuiComponentScrollable;
 import com.replaymod.gui.container.GuiContainer;
 import com.replaymod.gui.container.GuiPanel;
 import com.replaymod.gui.container.GuiScrollable;
@@ -24,15 +24,16 @@ import com.replaymod.gui.versions.MCVer;
 import com.replaymod.replaystudio.us.myles.ViaVersion.api.protocol.ProtocolVersion;
 import de.johni0702.minecraft.gui.utils.lwjgl.Dimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.network.play.NetworkPlayerInfo;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.resources.DefaultPlayerSkin;
-import net.minecraft.crash.CrashReport;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.CrashReport;
+import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -56,6 +57,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.UUID;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 import static com.replaymod.core.versions.MCVer.getMinecraft;
@@ -123,7 +125,9 @@ public class Utils {
         int sec = seconds - ((min * 60) + (hours * 60 * 60));
 
         StringBuilder builder = new StringBuilder();
-        if (hours > 0) builder.append(String.format("%02d", hours)).append(":");
+        if (hours > 0) {
+            builder.append(String.format("%02d", hours)).append(":");
+        }
         builder.append(String.format("%02d", min)).append(":");
         builder.append(String.format("%02d", sec));
 
@@ -170,11 +174,11 @@ public class Utils {
     }
 
     public static ResourceLocation getResourceLocationForPlayerUUID(UUID uuid) {
-        NetworkPlayerInfo info = getMinecraft().getConnection().getPlayerInfo(uuid);
+        PlayerInfo info = getMinecraft().getConnection().getPlayerInfo(uuid);
         ResourceLocation skinLocation;
 
-        if (info != null && info.hasLocationSkin()) {
-            skinLocation = info.getLocationSkin();
+        if (info != null && info.isSkinLoaded()) {
+            skinLocation = info.getSkinLocation();
         } else {
             skinLocation = DefaultPlayerSkin.getDefaultSkin(uuid);
         }
@@ -196,20 +200,25 @@ public class Utils {
             public void onFailure(@Nonnull Throwable t) {
                 onFailure.accept(t);
             }
+        }, new Executor() {
+            @Override
+            public void execute(@NotNull Runnable command) {
+
+            }
         });
     }
 
     public static GuiInfoPopup error(Logger logger, GuiContainer container, CrashReport crashReport, Runnable onClose) {
         // Convert crash report to string
-        String crashReportStr = crashReport.getCompleteReport();
+        String crashReportStr = crashReport.getFriendlyReport();
 
         // Log via logger
         logger.error(crashReportStr);
 
         // Try to save the crash report
-        if (crashReport.getFile() == null) {
+        if (crashReport.getSaveFile() == null) {
             try {
-                File folder = new File(getMinecraft().gameDir, "crash-reports");
+                File folder = new File(getMinecraft().gameDirectory, "crash-reports");
                 File file = new File(folder, "crash-" + (new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss")).format(new Date()) + "-client.txt");
                 logger.debug("Saving crash report to file: {}", file);
                 crashReport.saveToFile(file);
@@ -217,7 +226,7 @@ public class Utils {
                 logger.error("Saving crash report file:", t);
             }
         } else {
-            logger.debug("Not saving crash report as file already exists: {}", crashReport.getFile());
+            logger.debug("Not saving crash report as file already exists: {}", crashReport.getSaveFile());
         }
 
         logger.trace("Opening crash report popup GUI");
@@ -241,7 +250,7 @@ public class Utils {
             // Add crash report to scrollable info
             getInfo().addElements(new VerticalLayout.Data(0.5),
                     new GuiLabel().setColor(Colors.BLACK).setI18nText("replaymod.gui.unknownerror"),
-                    scrollable = new GuiScrollable().setScrollDirection(AbstractGuiScrollable.Direction.VERTICAL)
+                    scrollable = new GuiScrollable().setScrollDirection(GuiComponentScrollable.Direction.VERTICAL)
                             .setLayout(new VerticalLayout().setSpacing(2))
                             .addElements(null, Arrays.stream(crashReport.replace("\t", "    ").split("\n")).map(
                                     l -> new GuiLabel().setText(l).setColor(Colors.BLACK)).toArray(GuiElement[]::new)));

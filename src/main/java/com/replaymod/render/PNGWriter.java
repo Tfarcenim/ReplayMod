@@ -8,13 +8,14 @@ import com.replaymod.render.rendering.Channel;
 import com.replaymod.render.rendering.FrameConsumer;
 import com.replaymod.render.utils.ByteBufferPool;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
-import net.minecraft.crash.CrashReport;
+import net.minecraft.CrashReport;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public class PNGWriter implements FrameConsumer<BitmapFrame> {
 
@@ -40,7 +41,12 @@ public class PNGWriter implements FrameConsumer<BitmapFrame> {
                         image.writePNG(outputFolder.resolve(depthFrame.getFrameId() + ".depth.png").toFile()));
             }
         } catch (Throwable t) {
-            MCVer.getMinecraft().crashed(CrashReport.makeCrashReport(t, "Exporting EXR frame"));
+            MCVer.getMinecraft().delayCrash(new Supplier<CrashReport>() {
+                @Override
+                public CrashReport get() {
+                    return CrashReport.forThrowable(t, "Exporting EXR frame");
+                }
+            });
         } finally {
             channels.values().forEach(it -> ByteBufferPool.release(it.getByteBuffer()));
         }

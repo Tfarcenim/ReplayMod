@@ -1,6 +1,6 @@
 package com.replaymod.render.hooks;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.replaymod.core.events.PostRenderCallback;
 import com.replaymod.core.events.PreRenderCallback;
 import com.replaymod.core.events.PreRenderHandCallback;
@@ -9,12 +9,12 @@ import com.replaymod.gui.utils.EventRegistrations;
 import com.replaymod.render.RenderSettings;
 import com.replaymod.render.capturer.CaptureData;
 import com.replaymod.render.capturer.RenderInfo;
-import com.replaymod.render.capturer.WorldRenderer;
+import com.replaymod.render.capturer.LevelRenderer;
 import net.minecraft.client.Minecraft;
 
 import java.io.IOException;
 
-public class EntityRendererHandler extends EventRegistrations implements WorldRenderer {
+public class EntityRendererHandler extends EventRegistrations implements LevelRenderer {
     public final Minecraft mc = MCVer.getMinecraft();
 
     protected final RenderSettings settings;
@@ -44,8 +44,8 @@ public class EntityRendererHandler extends EventRegistrations implements WorldRe
     public void renderWorld(float partialTicks, long finishTimeNano) {
         PreRenderCallback.EVENT.invoker().preRender();
 
-        if (mc.world != null && mc.player != null) {
-            mc.gameRenderer.renderWorld(partialTicks, finishTimeNano, new MatrixStack());
+        if (mc.level != null && mc.player != null) {
+            mc.gameRenderer.renderLevel(partialTicks, finishTimeNano, new PoseStack());
         }
 
         PostRenderCallback.EVENT.invoker().postRender();

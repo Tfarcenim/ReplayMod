@@ -20,11 +20,12 @@ import com.replaymod.replaystudio.studio.ReplayStudio;
 import com.replaymod.replaystudio.us.myles.ViaVersion.api.protocol.ProtocolVersion;
 import com.replaymod.replaystudio.util.I18n;
 import com.replaymod.simplepathing.ReplayModSimplePathing;
-import net.minecraft.client.AbstractOption;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Option;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.FolderPack;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.*;
+import net.minecraft.server.packs.FolderPackResources;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
@@ -53,7 +54,7 @@ public class ReplayMod implements Module, Scheduler {
 
     private final ReplayModBackend backend;
     private final SchedulerImpl scheduler = new SchedulerImpl();
-    private final KeyBindingRegistry keyBindingRegistry = new KeyBindingRegistry();
+    private final KeyMappingRegistry keyBindingRegistry = new KeyMappingRegistry();
     private final SettingsRegistry settingsRegistry = new SettingsRegistry();
 
     {
@@ -83,7 +84,7 @@ public class ReplayMod implements Module, Scheduler {
     public ReplayMod(ReplayModBackend backend) {
         this.backend = backend;
 
-        I18n.setI18n(net.minecraft.client.resources.I18n::format);
+        I18n.setI18n(net.minecraft.client.resources.language.I18n::get);
 
         // Check Minecraft protocol version for compatibility
         if (!ProtocolVersion.isRegistered(MCVer.getProtocolVersion()) && !Boolean.parseBoolean(System.getProperty("replaymod.skipversioncheck", "false"))) {
@@ -104,7 +105,7 @@ public class ReplayMod implements Module, Scheduler {
         settingsRegistry.register();
     }
 
-    public KeyBindingRegistry getKeyBindingRegistry() {
+    public KeyMappingRegistry getKeyMappingRegistry() {
         return keyBindingRegistry;
     }
 
@@ -114,7 +115,7 @@ public class ReplayMod implements Module, Scheduler {
 
     public Path getReplayFolder() throws IOException {
         String str = getSettingsRegistry().get(Setting.RECORDING_PATH);
-        return Files.createDirectories(getMinecraft().gameDir.toPath().resolve(str));
+        return Files.createDirectories(getMinecraft().gameDirectory.toPath().resolve(str));
     }
 
     /**
@@ -138,7 +139,7 @@ public class ReplayMod implements Module, Scheduler {
      */
     public Path getCacheFolder() throws IOException {
         String str = getSettingsRegistry().get(Setting.CACHE_PATH);
-        Path path = getMinecraft().gameDir.toPath().resolve(str);
+        Path path = getMinecraft().gameDirectory.toPath().resolve(str);
         Files.createDirectories(path);
         try {
             Files.setAttribute(path, "dos:hidden", true);
@@ -162,24 +163,24 @@ public class ReplayMod implements Module, Scheduler {
         return replayFolder.resolve(relative);
     }
 
-    public static final FolderPack jGuiResourcePack = createJGuiResourcePack();
+    public static final FolderPackResources jGuiResourcePack = createJGuiResourcePack();
     public static final String JGUI_RESOURCE_PACK_NAME = "replaymod_jgui";
 
-    private static FolderPack createJGuiResourcePack() {
+    private static FolderPackResources createJGuiResourcePack() {
         File folder = new File("../jGui/src/main/resources");
         if (!folder.exists()) {
             return null;
         }
-        return new FolderPack(folder) {
+        return new FolderPackResources(folder) {
             @Override
             public String getName() {
                 return JGUI_RESOURCE_PACK_NAME;
             }
 
             @Override
-            protected InputStream getInputStream(String resourceName) throws IOException {
+            protected InputStream getResource(String resourceName) throws IOException {
                 try {
-                    return super.getInputStream(resourceName);
+                    return super.getResource(resourceName);
                 } catch (IOException e) {
                     if ("pack.mcmeta".equals(resourceName)) {
                         int version = 4;
@@ -195,12 +196,12 @@ public class ReplayMod implements Module, Scheduler {
     void initModules() {
         modules.forEach(Module::initCommon);
         modules.forEach(Module::initClient);
-        modules.forEach(m -> m.registerKeyBindings(keyBindingRegistry));
+        modules.forEach(m -> m.registerKeyMappings(keyBindingRegistry));
     }
 
     @Override
-    public void registerKeyBindings(KeyBindingRegistry registry) {
-        registry.registerKeyBinding("replaymod.input.settings", 0, () -> {
+    public void registerKeyMappings(KeyMappingRegistry registry) {
+        registry.registerKeyMapping("replaymod.input.settings", 0, () -> {
             new GuiReplaySettings(null, settingsRegistry).display();
         }, false);
     }
@@ -212,7 +213,7 @@ public class ReplayMod implements Module, Scheduler {
 
         // 1.7.10 crashes when render distance > 16
         if (!MCVer.hasOptifine()) {
-            AbstractOption.RENDER_DISTANCE.setMaxValue(64f);
+            Option.RENDER_DISTANCE.setMaxValue(64f);
         }
 
         runPostStartup(() -> {
@@ -304,7 +305,7 @@ public class ReplayMod implements Module, Scheduler {
                             Files.delete(noRecoverMarker);
                             continue;
                         }
-                        new RestoreReplayGui(this, GuiScreen.wrap(mc.currentScreen), original.toFile()).display();
+                        new RestoreReplayGui(this, GuiScreen.wrap(mc.screen), original.toFile()).display();
                     }
                 }
             } catch (IOException e) {
@@ -365,16 +366,16 @@ public class ReplayMod implements Module, Scheduler {
     private void printToChat(boolean warning, String message, Object... args) {
         if (getSettingsRegistry().get(Setting.NOTIFICATIONS)) {
             // Some nostalgia: "§8[§6Replay Mod§8]§r Your message goes here"
-            Style coloredDarkGray = Style.EMPTY.setFormatting(TextFormatting.DARK_GRAY);
-            Style coloredGold = Style.EMPTY.setFormatting(TextFormatting.GOLD);
-            Style alert = Style.EMPTY.setFormatting(warning ? TextFormatting.RED : TextFormatting.DARK_GREEN);
-            ITextComponent text = new StringTextComponent("[").setStyle(coloredDarkGray)
-                    .appendSibling(new TranslationTextComponent("replaymod.title").setStyle(coloredGold))
-                    .appendSibling(new StringTextComponent("] "))
-                    .appendSibling(new TranslationTextComponent(message, args).setStyle(alert));
+            Style coloredDarkGray = Style.EMPTY.withColor(ChatFormatting.DARK_GRAY);
+            Style coloredGold = Style.EMPTY.withColor(ChatFormatting.GOLD);
+            Style alert = Style.EMPTY.withColor(warning ? ChatFormatting.RED : ChatFormatting.DARK_GREEN);
+            Component text = new TextComponent("[").setStyle(coloredDarkGray)
+                    .append(new TranslatableComponent("replaymod.title").setStyle(coloredGold))
+                    .append(new TextComponent("] "))
+                    .append(new TranslatableComponent(message, args).setStyle(alert));
             // Send message to chat GUI
             // The ingame GUI is initialized at startup, therefore this is possible before the client is connected
-            mc.ingameGUI.getChatGUI().printChatMessage(text);
+            mc.gui.getChat().addMessage(text);
         }
     }
 

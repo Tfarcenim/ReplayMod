@@ -19,14 +19,14 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import net.minecraft.client.Minecraft;
-import net.minecraft.crash.CrashReport;
-import net.minecraft.entity.Entity;
-import net.minecraft.network.IPacket;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.network.login.server.SCustomPayloadLoginPacket;
-import net.minecraft.network.login.server.SEnableCompressionPacket;
-import net.minecraft.network.play.server.*;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.CrashReport;
+import net.minecraft.network.protocol.game.*;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.login.ClientboundCustomQueryPacket;
+import net.minecraft.network.protocol.login.ClientboundLoginCompressionPacket;
+import net.minecraft.network.chat.TextComponent;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -56,6 +56,7 @@ public class PacketListener extends ChannelInboundHandlerAdapter {
     private final PacketRecorder packetRecorder;
     private final ResourcePackRecorder resourcePackRecorder;
 
+    @SuppressWarnings("AlibabaThreadPoolCreation")
     private final ExecutorService saveService = Executors.newSingleThreadExecutor();
 
     private ChannelHandlerContext context = null;
@@ -123,49 +124,48 @@ public class PacketListener extends ChannelInboundHandlerAdapter {
         }
         this.context = ctx;
 
-        if (msg instanceof IPacket) {
+        if (msg instanceof Packet) {
             try {
-                IPacket packet = (IPacket) msg;
+                Packet packet = (Packet) msg;
 
-                if (packet instanceof SCollectItemPacket) {
+                if (packet instanceof ClientboundTakeItemEntityPacket) {
                     if (mc.player != null ||
-                            ((SCollectItemPacket) packet).getCollectedItemEntityID() == mc.player.getEntityId()) {
+                            ((ClientboundTakeItemEntityPacket) packet).getItemId() == mc.player.getId()) {
                         super.channelRead(ctx, msg);
                         return;
                     }
                 }
 
-                if (packet instanceof SSendResourcePackPacket) {
-                    save(resourcePackRecorder.handleResourcePack((SSendResourcePackPacket) packet));
+                if (packet instanceof ClientboundResourcePackPacket) {
+                    save(resourcePackRecorder.handleResourcePack((ClientboundResourcePackPacket) packet));
                     return;
                 }
 
-                if (packet instanceof SCustomPayloadLoginPacket) {
-                    PacketBuffer buffer = new PacketBuffer(Unpooled.buffer());
-                    packet.writePacketData(buffer);
-                    packet = new SCustomPayloadLoginPacket();
-                    packet.readPacketData(buffer);
+                if (packet instanceof ClientboundCustomQueryPacket) {
+                    FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
+                    packet.write(buffer);
+                    packet = new ClientboundCustomQueryPacket(buffer);
                 }
 
-                if (packet instanceof SCustomPayloadPlayPacket) {
+                if (packet instanceof ClientboundCustomPayloadPacket) {
                     // Forge may read from this ByteBuf and/or release it during handling
                     // We want to save the full thing however, so we create a copy and save that one instead of the
                     // original one
                     // Note: This isn't an issue with vanilla MC because our saving code runs on the main thread
                     //       shortly before the vanilla handling code does. Forge however does some stuff on the netty
                     //       threads which leads to this race condition
-                    packet = new SCustomPayloadPlayPacket(
-                            ((SCustomPayloadPlayPacket) packet).getChannelName(),
-                            new PacketBuffer(((SCustomPayloadPlayPacket) packet).getBufferData().slice().retain())
+                    packet = new ClientboundCustomPayloadPacket(
+                            ((ClientboundCustomPayloadPacket) packet).getIdentifier(),
+                            new FriendlyByteBuf(((ClientboundCustomPayloadPacket) packet).getData().slice().retain())
                     );
                 }
 
                 save(packet);
 
-                if (packet instanceof SCustomPayloadPlayPacket) {
-                    SCustomPayloadPlayPacket p = (SCustomPayloadPlayPacket) packet;
-                    if (Restrictions.PLUGIN_CHANNEL.equals(p.getChannelName())) {
-                        packet = new SDisconnectPacket(new StringTextComponent("Please update to view this replay."));
+                if (packet instanceof ClientboundCustomPayloadPacket) {
+                    ClientboundCustomPayloadPacket p = (ClientboundCustomPayloadPacket) packet;
+                    if (Restrictions.PLUGIN_CHANNEL.equals(p.getIdentifier())) {
+                        packet = new ClientboundDisconnectPacket(new TextComponent("Please update to view this replay."));
                         save(packet);
                     }
                 }
@@ -177,26 +177,26 @@ public class PacketListener extends ChannelInboundHandlerAdapter {
         super.channelRead(ctx, msg);
     }
 
-    public void save(IPacket packet) {
+    public void save(Packet packet) {
         // If we're not on the main thread (i.e. we're on the netty thread), then we need to schedule the saving
         // to happen on the main thread so we can guarantee correct ordering of inbound and inject packets.
         // Otherwise, injected packets may end up further down the packet stream than they were supposed to and other
         // inbound packets which may rely on the injected packet would behave incorrectly when played back.
-        if (!mc.isOnExecutionThread()) {
-            mc.enqueue(() -> save(packet));
+        if (!mc.isSameThread()) {
+            mc.execute(() -> save(packet));
             return;
         }
 
         try {
-            if (packet instanceof SSpawnPlayerPacket) {
-                UUID uuid = ((SSpawnPlayerPacket) packet).getUniqueId();
+            if (packet instanceof ClientboundAddPlayerPacket) {
+                UUID uuid = ((ClientboundAddPlayerPacket) packet).getPlayerId();
                 Set<String> uuids = new HashSet<>(Arrays.asList(metaData.getPlayers()));
                 uuids.add(uuid.toString());
                 metaData.setPlayers(uuids.toArray(new String[uuids.size()]));
                 saveMetaData();
             }
 
-            if (packet instanceof SEnableCompressionPacket) {
+            if (packet instanceof ClientboundLoginCompressionPacket) {
                 return; // Replay data is never compressed on the packet level
             }
 
@@ -211,17 +211,17 @@ public class PacketListener extends ChannelInboundHandlerAdapter {
     }
 
     public void addMarker(String name, int timestamp) {
-        Entity view = mc.getRenderViewEntity();
+        Entity view = mc.getCameraEntity();
 
         Marker marker = new Marker();
         marker.setName(name);
         marker.setTime(timestamp);
         if (view != null) {
-            marker.setX(view.getPosX());
-            marker.setY(view.getPosY());
-            marker.setZ(view.getPosZ());
-            marker.setYaw(view.rotationYaw);
-            marker.setPitch(view.rotationPitch);
+            marker.setX(view.getX());
+            marker.setY(view.getY());
+            marker.setZ(view.getZ());
+            marker.setYaw(view.xRot);
+            marker.setPitch(view.yRot);
         }
         // Roll is always 0
         saveService.submit(() -> {
@@ -307,8 +307,8 @@ public class PacketListener extends ChannelInboundHandlerAdapter {
                 }
             } catch (Exception e) {
                 logger.error("Saving replay file:", e);
-                CrashReport crashReport = CrashReport.makeCrashReport(e, "Saving replay file");
-                core.runLater(() -> Utils.error(logger, VanillaGuiScreen.wrap(mc.currentScreen), crashReport, guiSavingReplay::close));
+                CrashReport crashReport = CrashReport.forThrowable(e, "Saving replay file");
+                core.runLater(() -> Utils.error(logger, VanillaGuiScreen.wrap(mc.screen), crashReport, guiSavingReplay::close));
                 return null;
             }
         }

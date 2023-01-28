@@ -1,7 +1,7 @@
 package com.replaymod.core.utils;
 
 import com.replaymod.mixin.TimerAccessor;
-import net.minecraft.util.Timer;
+import net.minecraft.client.Timer;
 
 public class WrappedTimer extends Timer {
     public static final float DEFAULT_MS_PER_TICK = 1000 / 20;
@@ -16,13 +16,13 @@ public class WrappedTimer extends Timer {
 
     @Override
     public int
-    getPartialTicks(
+    advanceTime(
             long sysClock
     ) {
         copy(this, wrapped);
         try {
             return
-                    wrapped.getPartialTicks(
+                    wrapped.advanceTime(
                             sysClock
                     );
         } finally {
@@ -34,9 +34,9 @@ public class WrappedTimer extends Timer {
         TimerAccessor fromA = (TimerAccessor) from;
         TimerAccessor toA = (TimerAccessor) to;
 
-        to.renderPartialTicks = from.renderPartialTicks;
+        to.partialTick = from.partialTick;
         toA.setLastSyncSysClock(fromA.getLastSyncSysClock());
-        to.elapsedPartialTicks = from.elapsedPartialTicks;
+        to.tickDelta = from.tickDelta;
         toA.setTickLength(fromA.getTickLength());
     }
 }

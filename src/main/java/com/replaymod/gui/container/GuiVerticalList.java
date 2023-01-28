@@ -24,7 +24,7 @@
  */
 package com.replaymod.gui.container;
 
-public class GuiVerticalList extends AbstractGuiVerticalList<GuiVerticalList> {
+public class GuiVerticalList extends GuiComponentVerticalList<GuiVerticalList> {
     public GuiVerticalList() {
     }
 

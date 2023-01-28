@@ -11,13 +11,13 @@ import com.replaymod.gui.element.GuiCheckbox;
 import com.replaymod.gui.element.GuiLabel;
 import com.replaymod.gui.layout.HorizontalLayout;
 import com.replaymod.gui.layout.VerticalLayout;
-import com.replaymod.gui.popup.AbstractGuiPopup;
+import com.replaymod.gui.popup.GuiComponentPopup;
 import com.replaymod.render.RenderSettings;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableColor;
 
 import java.net.URI;
 
-public class GuiUploadScreenshot extends AbstractGuiPopup<GuiUploadScreenshot> {
+public class GuiUploadScreenshot extends GuiComponentPopup<GuiUploadScreenshot> {
 
     public final ReplayMod mod;
 

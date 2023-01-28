@@ -2,12 +2,12 @@ package com.replaymod.render.rendering;
 
 import com.replaymod.core.versions.MCVer;
 import com.replaymod.mixin.MinecraftAccessor;
-import com.replaymod.render.capturer.WorldRenderer;
+import com.replaymod.render.capturer.LevelRenderer;
 import com.replaymod.render.frame.BitmapFrame;
 import com.replaymod.render.processor.GlToAbsoluteDepthProcessor;
 import net.minecraft.client.Minecraft;
-import net.minecraft.crash.CrashReport;
-import net.minecraft.crash.ReportedException;
+import net.minecraft.CrashReport;
+import net.minecraft.ReportedException;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.HashMap;
@@ -16,12 +16,13 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import static com.replaymod.core.versions.MCVer.getMinecraft;
 
 public class Pipeline<R extends Frame, P extends Frame> implements Runnable {
 
-    private final WorldRenderer worldRenderer;
+    private final LevelRenderer levelRenderer;
     private final FrameCapturer<R> capturer;
     private final FrameProcessor<R, P> processor;
     private final GlToAbsoluteDepthProcessor depthProcessor;
@@ -31,14 +32,14 @@ public class Pipeline<R extends Frame, P extends Frame> implements Runnable {
 
     private volatile boolean abort;
 
-    public Pipeline(WorldRenderer worldRenderer, FrameCapturer<R> capturer, FrameProcessor<R, P> processor, FrameConsumer<P> consumer) {
-        this.worldRenderer = worldRenderer;
+    public Pipeline(LevelRenderer levelRenderer, FrameCapturer<R> capturer, FrameProcessor<R, P> processor, FrameConsumer<P> consumer) {
+        this.levelRenderer = levelRenderer;
         this.capturer = capturer;
         this.processor = processor;
         this.consumer = consumer;
 
         float near = 0.05f;
-        float far = getMinecraft().gameSettings.renderDistanceChunks * 16 * 4;
+        float far = getMinecraft().options.renderDistance * 16 * 4;
         this.depthProcessor = new GlToAbsoluteDepthProcessor(near, far);
     }
 
@@ -64,7 +65,7 @@ public class Pipeline<R extends Frame, P extends Frame> implements Runnable {
 
         Minecraft mc = MCVer.getMinecraft();
         while (!capturer.isDone() && !abort) {
-            if (GLFW.glfwWindowShouldClose(mc.getMainWindow().getHandle()) || ((MinecraftAccessor) mc).getCrashReporter() != null) {
+            if (GLFW.glfwWindowShouldClose(mc.getWindow().getWindow()) || ((MinecraftAccessor) mc).getCrashReporter().get() != null) {
                 processService.shutdown();
                 return;
             }
@@ -82,12 +83,12 @@ public class Pipeline<R extends Frame, P extends Frame> implements Runnable {
         }
 
         try {
-            worldRenderer.close();
+            levelRenderer.close();
             capturer.close();
             processor.close();
             consumer.close();
         } catch (Throwable t) {
-            CrashReport crashReport = CrashReport.makeCrashReport(t, "Cleaning up rendering pipeline");
+            CrashReport crashReport = CrashReport.forThrowable(t, "Cleaning up rendering pipeline");
             throw new ReportedException(crashReport);
         }
     }
@@ -132,8 +133,13 @@ public class Pipeline<R extends Frame, P extends Frame> implements Runnable {
                     consumerLock.notifyAll();
                 }
             } catch (Throwable t) {
-                CrashReport crashReport = CrashReport.makeCrashReport(t, "Processing frame");
-                MCVer.getMinecraft().crashed(crashReport);
+                CrashReport crashReport = CrashReport.forThrowable(t, "Processing frame");
+                MCVer.getMinecraft().delayCrash(new Supplier<CrashReport>() {
+                    @Override
+                    public CrashReport get() {
+                        return crashReport;
+                    }
+                });
             }
         }
     }

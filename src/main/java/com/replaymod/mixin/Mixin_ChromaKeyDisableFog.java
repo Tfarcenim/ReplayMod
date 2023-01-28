@@ -15,7 +15,9 @@ public abstract class Mixin_ChromaKeyDisableFog {
     static void replayModRender_onSetupFog(CallbackInfo ci) {
         EntityRendererHandler handler =
                 ((EntityRendererHandler.IEntityRenderer) MCVer.getMinecraft().gameRenderer).replayModRender_getHandler();
-        if (handler == null) return;
+        if (handler == null) {
+            return;
+        }
         if (handler.getSettings().getChromaKeyingColor() != null) {
             ci.cancel();
         }

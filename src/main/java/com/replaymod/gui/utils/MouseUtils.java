@@ -26,25 +26,25 @@ package com.replaymod.gui.utils;
 
 import com.replaymod.gui.versions.MCVer;
 import de.johni0702.minecraft.gui.utils.lwjgl.Point;
-import net.minecraft.client.MainWindow;
+import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.Minecraft;
 
 public class MouseUtils {
     private static final Minecraft mc = com.replaymod.gui.versions.MCVer.getMinecraft();
 
     public static Point getMousePos() {
-        int mouseX = (int) mc.mouseHelper.getMouseX();
-        int mouseY = (int) mc.mouseHelper.getMouseY();
-        MainWindow mainWindow = com.replaymod.gui.versions.MCVer.newScaledResolution(mc);
-        mouseX = (int) Math.round((double) mouseX * mainWindow.getScaledWidth() / mainWindow.getWidth());
-        mouseY = (int) Math.round((double) mouseY * mainWindow.getScaledHeight() / mainWindow.getHeight());
+        int mouseX = (int) mc.mouseHandler.xpos();
+        int mouseY = (int) mc.mouseHandler.ypos();
+        Window mainWindow = com.replaymod.gui.versions.MCVer.newScaledResolution(mc);
+        mouseX = (int) Math.round((double) mouseX * mainWindow.getGuiScaledWidth() / mainWindow.getWidth());
+        mouseY = (int) Math.round((double) mouseY * mainWindow.getGuiScaledHeight() / mainWindow.getHeight());
 
         return new Point(mouseX, mouseY);
     }
 
     public static Point getScaledDimensions() {
-        MainWindow
+        Window
                 res = MCVer.newScaledResolution(mc);
-        return new Point(res.getScaledWidth(), res.getScaledHeight());
+        return new Point(res.getGuiScaledWidth(), res.getGuiScaledHeight());
     }
 }

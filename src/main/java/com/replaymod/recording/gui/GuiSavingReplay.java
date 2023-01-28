@@ -20,7 +20,7 @@ import com.replaymod.replaystudio.us.myles.ViaVersion.api.Pair;
 import de.johni0702.minecraft.gui.utils.lwjgl.Dimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
 import net.minecraft.client.Minecraft;
-import net.minecraft.crash.CrashReport;
+import net.minecraft.CrashReport;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -62,7 +62,7 @@ public class GuiSavingReplay {
 
     public void close() {
         core.getBackgroundProcesses().removeProcess(panel);
-        AbstractGuiScreen<?> currentScreen = GuiScreen.from(mc.currentScreen);
+        GuiComponentScreen<?> currentScreen = GuiScreen.from(mc.screen);
         if (currentScreen instanceof GuiReplayViewer) {
             ((GuiReplayViewer) currentScreen).list.load();
         }
@@ -143,8 +143,8 @@ public class GuiSavingReplay {
                 Files.delete(path);
             } catch (IOException e) {
                 logger.error("Deleting replay file:", e);
-                CrashReport crashReport = CrashReport.makeCrashReport(e, "Deleting replay file");
-                core.runLater(() -> Utils.error(logger, VanillaGuiScreen.wrap(mc.currentScreen), crashReport, () -> {
+                CrashReport crashReport = CrashReport.forThrowable(e, "Deleting replay file");
+                core.runLater(() -> Utils.error(logger, VanillaGuiScreen.wrap(mc.screen), crashReport, () -> {
                 }));
             }
             return;
@@ -159,8 +159,8 @@ public class GuiSavingReplay {
             Files.move(path, newPath);
         } catch (IOException e) {
             logger.error("Renaming replay file:", e);
-            CrashReport crashReport = CrashReport.makeCrashReport(e, "Renaming replay file");
-            core.runLater(() -> Utils.error(logger, VanillaGuiScreen.wrap(mc.currentScreen), crashReport, () -> {
+            CrashReport crashReport = CrashReport.forThrowable(e, "Renaming replay file");
+            core.runLater(() -> Utils.error(logger, VanillaGuiScreen.wrap(mc.screen), crashReport, () -> {
             }));
         }
     }

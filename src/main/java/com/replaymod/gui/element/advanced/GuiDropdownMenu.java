@@ -26,7 +26,7 @@ package com.replaymod.gui.element.advanced;
 
 import com.replaymod.gui.container.GuiContainer;
 
-public class GuiDropdownMenu<V> extends AbstractGuiDropdownMenu<V, GuiDropdownMenu<V>> {
+public class GuiDropdownMenu<V> extends GuiComponentDropdownMenu<V, GuiDropdownMenu<V>> {
 
     public GuiDropdownMenu() {
     }

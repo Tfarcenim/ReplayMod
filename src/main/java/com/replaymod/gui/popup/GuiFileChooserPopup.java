@@ -50,7 +50,7 @@ import java.nio.file.InvalidPathException;
 import java.util.*;
 
 
-public class GuiFileChooserPopup extends AbstractGuiPopup<GuiFileChooserPopup> implements Typeable {
+public class GuiFileChooserPopup extends GuiComponentPopup<GuiFileChooserPopup> implements Typeable {
     public static GuiFileChooserPopup openSaveGui(com.replaymod.gui.container.GuiContainer container, String buttonLabel, String... fileExtensions) {
         GuiFileChooserPopup popup = new GuiFileChooserPopup(container, fileExtensions, false).setBackgroundColor(com.replaymod.gui.utils.Colors.DARK_TRANSPARENT);
         popup.acceptButton.setI18nLabel(buttonLabel);
@@ -238,7 +238,7 @@ public class GuiFileChooserPopup extends AbstractGuiPopup<GuiFileChooserPopup> i
                 @Override
                 protected ReadableDimension calcMinSize() {
                     ReadableDimension dim = super.calcMinSize();
-                    return new Dimension(dim.getWidth() - 5 - com.replaymod.gui.versions.MCVer.getFontRenderer().FONT_HEIGHT,
+                    return new Dimension(dim.getWidth() - 5 - com.replaymod.gui.versions.MCVer.getFont().lineHeight,
                             dim.getHeight());
                 }
 

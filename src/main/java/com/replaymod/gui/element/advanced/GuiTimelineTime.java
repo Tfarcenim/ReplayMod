@@ -26,7 +26,7 @@ package com.replaymod.gui.element.advanced;
 
 import com.replaymod.gui.container.GuiContainer;
 
-public class GuiTimelineTime<U extends AbstractGuiTimeline<U>> extends AbstractGuiTimelineTime<GuiTimelineTime<U>, U> {
+public class GuiTimelineTime<U extends GuiComponentTimeline<U>> extends GuiComponentTimelineTime<GuiTimelineTime<U>, U> {
     public GuiTimelineTime() {
     }
 

@@ -14,22 +14,22 @@ public abstract class MixinGlStateManager {
     @Shadow
     private static int activeTexture;
 
-    @Inject(method = "enableFog", at = @At("HEAD"))
+    /*@Inject(method = "_enableFog", at = @At("HEAD"))
     private static void enableFog(CallbackInfo ci) {
         FogStateCallback.EVENT.invoker().fogStateChanged(true);
     }
 
-    @Inject(method = "disableFog", at = @At("HEAD"))
+    @Inject(method = "_disableFog", at = @At("HEAD"))
     private static void disableFog(CallbackInfo ci) {
         FogStateCallback.EVENT.invoker().fogStateChanged(false);
-    }
+    }*/
 
-    @Inject(method = "enableTexture", at = @At("HEAD"))
+    @Inject(method = "_enableTexture", at = @At("HEAD"))
     private static void enableTexture(CallbackInfo ci) {
         Texture2DStateCallback.EVENT.invoker().texture2DStateChanged(MixinGlStateManager.activeTexture, true);
     }
 
-    @Inject(method = "disableTexture", at = @At("HEAD"))
+    @Inject(method = "_disableTexture", at = @At("HEAD"))
     private static void disableTexture(CallbackInfo ci) {
         Texture2DStateCallback.EVENT.invoker().texture2DStateChanged(MixinGlStateManager.activeTexture, false);
     }

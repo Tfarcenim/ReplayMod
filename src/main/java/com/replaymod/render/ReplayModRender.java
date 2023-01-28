@@ -10,8 +10,8 @@ import com.replaymod.replay.ReplayHandler;
 import com.replaymod.replay.events.ReplayClosedCallback;
 import com.replaymod.replay.events.ReplayOpenedCallback;
 import com.replaymod.replaystudio.replay.ReplayFile;
-import net.minecraft.crash.CrashReport;
-import net.minecraft.crash.ReportedException;
+import net.minecraft.CrashReport;
+import net.minecraft.ReportedException;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,17 +53,17 @@ public class ReplayModRender extends EventRegistrations implements Module {
 
     public File getVideoFolder() {
         String path = core.getSettingsRegistry().get(Setting.RENDER_PATH);
-        File folder = new File(path.startsWith("./") ? core.getMinecraft().gameDir : null, path);
+        File folder = new File(path.startsWith("./") ? core.getMinecraft().gameDirectory : null, path);
         try {
             FileUtils.forceMkdir(folder);
         } catch (IOException e) {
-            throw new ReportedException(CrashReport.makeCrashReport(e, "Cannot create video folder."));
+            throw new ReportedException(CrashReport.forThrowable(e, "Cannot create video folder."));
         }
         return folder;
     }
 
     public Path getRenderSettingsPath() {
-        return core.getMinecraft().gameDir.toPath().resolve("config/replaymod-rendersettings.json");
+        return core.getMinecraft().gameDirectory.toPath().resolve("config/replaymod-rendersettings.json");
     }
 
     public List<RenderJob> getRenderQueue() {
@@ -79,7 +79,7 @@ public class ReplayModRender extends EventRegistrations implements Module {
         try {
             renderQueue.addAll(RenderJob.readQueue(replayFile));
         } catch (IOException e) {
-            throw new ReportedException(CrashReport.makeCrashReport(e, "Reading timeline"));
+            throw new ReportedException(CrashReport.forThrowable(e, "Reading timeline"));
         }
     }
 
@@ -97,8 +97,8 @@ public class ReplayModRender extends EventRegistrations implements Module {
             RenderJob.writeQueue(replayFile, renderQueue);
         } catch (IOException e) {
             e.printStackTrace();
-            VanillaGuiScreen screen = VanillaGuiScreen.wrap(getCore().getMinecraft().currentScreen);
-            CrashReport report = CrashReport.makeCrashReport(e, "Reading timeline");
+            VanillaGuiScreen screen = VanillaGuiScreen.wrap(getCore().getMinecraft().screen);
+            CrashReport report = CrashReport.forThrowable(e, "Reading timeline");
             Utils.error(LOGGER, screen, report, () -> {
             });
         }

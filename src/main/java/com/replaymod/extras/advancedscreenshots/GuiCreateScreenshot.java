@@ -10,7 +10,7 @@ import com.replaymod.gui.layout.VerticalLayout;
 import com.replaymod.render.RenderSettings;
 import com.replaymod.render.gui.GuiRenderSettings;
 import com.replaymod.replay.ReplayModReplay;
-import net.minecraft.crash.CrashReport;
+import net.minecraft.CrashReport;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -63,7 +63,7 @@ public class GuiCreateScreenshot extends GuiRenderSettings implements Loadable {
                     }
 
                 } catch (Throwable t) {
-                    error(LOGGER, GuiCreateScreenshot.this, CrashReport.makeCrashReport(t, "Rendering video"), () -> {
+                    error(LOGGER, GuiCreateScreenshot.this, CrashReport.forThrowable(t, "Rendering video"), () -> {
                     });
                     getScreen().display(); // Re-show the render settings gui and the new error popup
                 }
@@ -85,7 +85,7 @@ public class GuiCreateScreenshot extends GuiRenderSettings implements Loadable {
     @Override
     public void close() {
         super.close();
-        getMinecraft().displayGuiScreen(null);
+        getMinecraft().setScreen(null);
     }
 
     @Override
@@ -97,7 +97,7 @@ public class GuiCreateScreenshot extends GuiRenderSettings implements Loadable {
     @Override
     protected File generateOutputFile(RenderSettings.EncodingPreset encodingPreset) {
         DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH.mm.ss");
-        File screenshotFolder = new File(getMinecraft().gameDir, "screenshots");
+        File screenshotFolder = new File(getMinecraft().gameDirectory, "screenshots");
         screenshotFolder.mkdirs();
         String baseName = DATE_FORMAT.format(new Date());
         for (int i = 1; ; i++) {
@@ -115,6 +115,6 @@ public class GuiCreateScreenshot extends GuiRenderSettings implements Loadable {
 
     @Override
     protected Path getSettingsPath() {
-        return getMinecraft().gameDir.toPath().resolve("config/replaymod-screenshotsettings.json");
+        return getMinecraft().gameDirectory.toPath().resolve("config/replaymod-screenshotsettings.json");
     }
 }

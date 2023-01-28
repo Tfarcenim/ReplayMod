@@ -14,13 +14,13 @@ import com.replaymod.gui.element.advanced.GuiTimelineTime;
 import com.replaymod.gui.layout.CustomLayout;
 import com.replaymod.gui.layout.HorizontalLayout;
 import com.replaymod.gui.layout.VerticalLayout;
-import com.replaymod.gui.popup.AbstractGuiPopup;
+import com.replaymod.gui.popup.GuiComponentPopup;
 import com.replaymod.replay.gui.overlay.GuiMarkerTimeline;
 import com.replaymod.replaystudio.data.Marker;
 import com.replaymod.replaystudio.replay.ReplayFile;
 import de.johni0702.minecraft.gui.utils.lwjgl.Color;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
-import net.minecraft.crash.CrashReport;
+import net.minecraft.CrashReport;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -30,7 +30,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class GuiEditReplay extends AbstractGuiPopup<GuiEditReplay> {
+public class GuiEditReplay extends GuiComponentPopup<GuiEditReplay> {
     private final Path inputPath;
 
     private final EditTimeline timeline;
@@ -151,7 +151,7 @@ public class GuiEditReplay extends AbstractGuiPopup<GuiEditReplay> {
                 replayFile.writeMarkers(markers);
                 replayFile.save();
             } catch (IOException e) {
-                Utils.error(ReplayModEditor.LOGGER, this, CrashReport.makeCrashReport(e, "Writing markers"), this::close);
+                Utils.error(ReplayModEditor.LOGGER, this, CrashReport.forThrowable(e, "Writing markers"), this::close);
             }
 
             try {
@@ -163,7 +163,7 @@ public class GuiEditReplay extends AbstractGuiPopup<GuiEditReplay> {
                 });
             } catch (Throwable e) {
                 e.printStackTrace(); // in case runLater fails
-                CrashReport crashReport = CrashReport.makeCrashReport(e, "Running marker processor");
+                CrashReport crashReport = CrashReport.forThrowable(e, "Running marker processor");
                 ReplayMod.instance.runLater(() -> Utils.error(ReplayModEditor.LOGGER, this, crashReport, () -> {
                     progressPopup.close();
                     close();
@@ -182,7 +182,7 @@ public class GuiEditReplay extends AbstractGuiPopup<GuiEditReplay> {
         return this;
     }
 
-    private class ProgressPopup extends AbstractGuiPopup<ProgressPopup> {
+    private class ProgressPopup extends GuiComponentPopup<ProgressPopup> {
         private final GuiProgressBar progressBar = new GuiProgressBar(popup).setSize(300, 20);
 
         ProgressPopup(GuiContainer container) {

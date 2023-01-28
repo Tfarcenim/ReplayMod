@@ -26,7 +26,7 @@ package com.replaymod.gui.element;
 
 import com.replaymod.gui.container.GuiContainer;
 
-public class GuiImage extends AbstractGuiImage<GuiImage> {
+public class GuiImage extends GuiComponentImage<GuiImage> {
     public GuiImage() {
     }
 

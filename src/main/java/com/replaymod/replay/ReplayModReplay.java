@@ -4,7 +4,7 @@ import com.google.common.base.Function;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.replaymod.core.KeyBindingRegistry;
+import com.replaymod.core.KeyMappingRegistry;
 import com.replaymod.core.Module;
 import com.replaymod.core.ReplayMod;
 import com.replaymod.core.utils.ModCompat;
@@ -17,9 +17,10 @@ import com.replaymod.replay.handler.GuiHandler;
 import com.replaymod.replaystudio.data.Marker;
 import com.replaymod.replaystudio.replay.ReplayFile;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.client.KeyMapping;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.awt.*;
@@ -27,6 +28,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 
 public class ReplayModReplay implements Module {
 
@@ -37,7 +39,7 @@ public class ReplayModReplay implements Module {
     public static ReplayModReplay instance;
 
     private ReplayMod core;
-    public KeyBindingRegistry.Binding keyPlayPause;
+    public KeyMappingRegistry.Binding keyPlayPause;
 
     private final CameraControllerRegistry cameraControllerRegistry = new CameraControllerRegistry();
 
@@ -56,8 +58,8 @@ public class ReplayModReplay implements Module {
     }
 
     @Override
-    public void registerKeyBindings(KeyBindingRegistry registry) {
-        registry.registerKeyBinding("replaymod.input.marker", Keyboard.KEY_M, new Runnable() {
+    public void registerKeyMappings(KeyMappingRegistry registry) {
+        registry.registerKeyMapping("replaymod.input.marker", Keyboard.KEY_M, new Runnable() {
             @Override
             public void run() {
                 if (replayHandler != null) {
@@ -65,11 +67,11 @@ public class ReplayModReplay implements Module {
                     if (camera != null) {
                         Marker marker = new Marker();
                         marker.setTime(replayHandler.getReplaySender().currentTimeStamp());
-                        marker.setX(camera.getPosX());
-                        marker.setY(camera.getPosY());
-                        marker.setZ(camera.getPosZ());
-                        marker.setYaw(camera.rotationYaw);
-                        marker.setPitch(camera.rotationPitch);
+                        marker.setX(camera.getX());
+                        marker.setY(camera.getY());
+                        marker.setZ(camera.getZ());
+                        marker.setYaw(camera.xRot);
+                        marker.setPitch(camera.yRot);
                         marker.setRoll(camera.roll);
                         replayHandler.getOverlay().timeline.addMarker(marker);
                     }
@@ -77,7 +79,7 @@ public class ReplayModReplay implements Module {
             }
         }, true);
 
-        registry.registerKeyBinding("replaymod.input.thumbnail", Keyboard.KEY_N, new Runnable() {
+        registry.registerKeyMapping("replaymod.input.thumbnail", Keyboard.KEY_N, new Runnable() {
             @Override
             public void run() {
                 if (replayHandler != null) {
@@ -107,12 +109,17 @@ public class ReplayModReplay implements Module {
                             t.printStackTrace();
                             core.printWarningToChat("replaymod.chat.failedthumb");
                         }
+                    }, new Executor() {
+                        @Override
+                        public void execute(@NotNull Runnable command) {
+
+                        }
                     });
                 }
             }
         }, true);
 
-        keyPlayPause = registry.registerKeyBinding("replaymod.input.playpause", Keyboard.KEY_P, new Runnable() {
+        keyPlayPause = registry.registerKeyMapping("replaymod.input.playpause", Keyboard.KEY_P, new Runnable() {
             @Override
             public void run() {
                 if (replayHandler != null) {
@@ -121,15 +128,15 @@ public class ReplayModReplay implements Module {
             }
         }, true);
 
-        core.getKeyBindingRegistry().registerKeyBinding("replaymod.input.rollclockwise", Keyboard.KEY_L, () -> {
+        core.getKeyMappingRegistry().registerKeyMapping("replaymod.input.rollclockwise", Keyboard.KEY_L, () -> {
             // Noop, actual handling logic in CameraEntity#update
         }, true);
 
-        core.getKeyBindingRegistry().registerKeyBinding("replaymod.input.rollcounterclockwise", Keyboard.KEY_J, () -> {
+        core.getKeyMappingRegistry().registerKeyMapping("replaymod.input.rollcounterclockwise", Keyboard.KEY_J, () -> {
             // Noop, actual handling logic in CameraEntity#update
         }, true);
 
-        core.getKeyBindingRegistry().registerKeyBinding("replaymod.input.resettilt", Keyboard.KEY_K, () -> {
+        core.getKeyMappingRegistry().registerKeyMapping("replaymod.input.resettilt", Keyboard.KEY_K, () -> {
             Optional.ofNullable(replayHandler).map(ReplayHandler::getCameraEntity).ifPresent(c -> c.roll = 0);
         }, true);
     }
@@ -185,14 +192,14 @@ public class ReplayModReplay implements Module {
             }
         }
         replayHandler = new ReplayHandler(replayFile, asyncMode);
-        KeyBinding.resetKeyBindingArrayAndHash(); // see Mixin_ContextualKeyBindings
+        KeyMapping.resetMapping(); // see Mixin_ContextualKeyMappings
 
         return replayHandler;
     }
 
     public void forcefullyStopReplay() {
         replayHandler = null;
-        KeyBinding.resetKeyBindingArrayAndHash(); // see Mixin_ContextualKeyBindings
+        KeyMapping.resetMapping(); // see Mixin_ContextualKeyMappings
     }
 
     public ReplayMod getCore() {

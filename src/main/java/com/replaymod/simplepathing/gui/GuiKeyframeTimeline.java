@@ -1,9 +1,10 @@
 package com.replaymod.simplepathing.gui;
 
+import com.mojang.blaze3d.vertex.VertexFormat;
 import com.replaymod.core.ReplayMod;
 import com.replaymod.core.versions.MCVer;
 import com.replaymod.gui.GuiRenderer;
-import com.replaymod.gui.element.advanced.AbstractGuiTimeline;
+import com.replaymod.gui.element.advanced.GuiComponentTimeline;
 import com.replaymod.gui.function.Draggable;
 import com.replaymod.pathing.properties.CameraProperties;
 import com.replaymod.pathing.properties.SpectatorProperty;
@@ -21,16 +22,16 @@ import com.replaymod.simplepathing.SPTimeline.SPPath;
 import de.johni0702.minecraft.gui.utils.lwjgl.Point;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.opengl.GL11;
 
 import java.util.Comparator;
 import java.util.Optional;
 
-public class GuiKeyframeTimeline extends AbstractGuiTimeline<GuiKeyframeTimeline> implements Draggable {
+public class GuiKeyframeTimeline extends GuiComponentTimeline<GuiKeyframeTimeline> implements Draggable {
     protected static final int KEYFRAME_SIZE = 5;
     protected static final int KEYFRAME_TEXTURE_X = 74;
     protected static final int KEYFRAME_TEXTURE_Y = 20;
@@ -141,12 +142,12 @@ public class GuiKeyframeTimeline extends AbstractGuiTimeline<GuiKeyframeTimeline
                     float positionXKeyframeTimeline = positonX + KEYFRAME_SIZE / 2f;
 
                     final int color = 0xff0000ff;
-                    Tessellator tessellator = Tessellator.getInstance();
-                    BufferBuilder buffer = tessellator.getBuffer();
-                    buffer.begin(GL11.GL_LINE_STRIP, DefaultVertexFormats.POSITION_COLOR);
+                    Tesselator tessellator = Tesselator.getInstance();
+                    BufferBuilder buffer = tessellator.getBuilder();
+                    buffer.begin(VertexFormat.Mode.LINE_STRIP, DefaultVertexFormat.POSITION_COLOR);
 
                     // Start just below the top border of the replay timeline
-                    buffer.pos(
+                    buffer.vertex(
                             replayTimelineLeft + positionXReplayTimeline,
                             replayTimelineTop + BORDER_TOP,
                             0
@@ -157,7 +158,7 @@ public class GuiKeyframeTimeline extends AbstractGuiTimeline<GuiKeyframeTimeline
                             color & 0xff
                     ).endVertex();
                     // Draw vertically over the replay timeline, including its bottom border
-                    buffer.pos(
+                    buffer.vertex(
                             replayTimelineLeft + positionXReplayTimeline,
                             replayTimelineBottom,
                             0
@@ -168,7 +169,7 @@ public class GuiKeyframeTimeline extends AbstractGuiTimeline<GuiKeyframeTimeline
                             color & 0xff
                     ).endVertex();
                     // Now for the important part: connecting to the keyframe timeline
-                    buffer.pos(
+                    buffer.vertex(
                             keyframeTimelineLeft + positionXKeyframeTimeline,
                             keyframeTimelineTop,
                             0
@@ -179,7 +180,7 @@ public class GuiKeyframeTimeline extends AbstractGuiTimeline<GuiKeyframeTimeline
                             color & 0xff
                     ).endVertex();
                     // And finally another vertical bit (the timeline is already crammed enough, so only the border)
-                    buffer.pos(
+                    buffer.vertex(
                             keyframeTimelineLeft + positionXKeyframeTimeline,
                             keyframeTimelineTop + BORDER_TOP,
                             0
@@ -195,7 +196,7 @@ public class GuiKeyframeTimeline extends AbstractGuiTimeline<GuiKeyframeTimeline
                     GL11.glPushAttrib(GL11.GL_SCISSOR_BIT);
                     GL11.glDisable(GL11.GL_SCISSOR_TEST);
                     GL11.glLineWidth(1);
-                    tessellator.draw();
+                    tessellator.end();
                     GL11.glPopAttrib();
                     GL11.glEnable(GL11.GL_TEXTURE_2D);
                     GL11.glDisable(GL11.GL_LINE_SMOOTH);
@@ -368,7 +369,9 @@ public class GuiKeyframeTimeline extends AbstractGuiTimeline<GuiKeyframeTimeline
             }
         }
         if (actuallyDragging) {
-            if (!gui.loadEntityTracker(() -> mouseDrag(position, button, timeSinceLastCall))) return true;
+            if (!gui.loadEntityTracker(() -> mouseDrag(position, button, timeSinceLastCall))) {
+                return true;
+            }
             // Threshold passed
             SPTimeline timeline = gui.getMod().getCurrentTimeline();
             Point mouse = new Point(position);

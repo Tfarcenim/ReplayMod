@@ -4,7 +4,7 @@ import com.replaymod.core.MinecraftMethodAccessor;
 import com.replaymod.core.events.PostRenderCallback;
 import com.replaymod.core.events.PreRenderCallback;
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.concurrent.RecursiveEventLoop;
+import net.minecraft.util.thread.ReentrantBlockableEventLoop;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Minecraft.class)
 public abstract class MixinMinecraft
-        extends RecursiveEventLoop<Runnable>
+        extends ReentrantBlockableEventLoop<Runnable>
         implements MinecraftMethodAccessor {
 
     public MixinMinecraft(String string_1) {
@@ -21,26 +21,26 @@ public abstract class MixinMinecraft
     }
 
     @Shadow
-    protected abstract void processKeyBinds();
+    protected abstract void handleKeybinds();
 
     public void replayModProcessKeyBinds() {
-        processKeyBinds();
+        handleKeybinds();
     }
 
     public void replayModExecuteTaskQueue() {
-        drainTasks();
+        runAllTasks();
     }
 
-    @Inject(method = "runGameLoop",
+    @Inject(method = "runTick",
             at = @At(value = "INVOKE",
-                    target = "Lnet/minecraft/client/renderer/GameRenderer;updateCameraAndRender(FJZ)V"))
+                    target = "Lnet/minecraft/client/renderer/GameRenderer;render(FJZ)V"))
     private void preRender(boolean unused, CallbackInfo ci) {
         PreRenderCallback.EVENT.invoker().preRender();
     }
 
-    @Inject(method = "runGameLoop",
+    @Inject(method = "runTick",
             at = @At(value = "INVOKE",
-                    target = "Lnet/minecraft/client/renderer/GameRenderer;updateCameraAndRender(FJZ)V",
+                    target = "Lnet/minecraft/client/renderer/GameRenderer;render(FJZ)V",
                     shift = At.Shift.AFTER))
     private void postRender(boolean unused, CallbackInfo ci) {
         PostRenderCallback.EVENT.invoker().postRender();

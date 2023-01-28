@@ -26,7 +26,7 @@ package com.replaymod.gui.element.advanced;
 
 import com.replaymod.gui.container.GuiContainer;
 
-public class GuiProgressBar extends AbstractGuiProgressBar<GuiProgressBar> {
+public class GuiProgressBar extends GuiComponentProgressBar<GuiProgressBar> {
     public GuiProgressBar() {
     }
 

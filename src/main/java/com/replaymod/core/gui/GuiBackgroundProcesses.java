@@ -2,7 +2,7 @@ package com.replaymod.core.gui;
 
 import com.replaymod.gui.GuiRenderer;
 import com.replaymod.gui.RenderInfo;
-import com.replaymod.gui.container.AbstractGuiContainer;
+import com.replaymod.gui.container.GuiComponentContainer;
 import com.replaymod.gui.container.GuiPanel;
 import com.replaymod.gui.container.GuiScreen;
 import com.replaymod.gui.container.VanillaGuiScreen;
@@ -23,8 +23,8 @@ public class GuiBackgroundProcesses extends EventRegistrations {
         on(InitScreenCallback.EVENT, (screen, buttons) -> onGuiInit(screen));
     }
 
-    private void onGuiInit(net.minecraft.client.gui.screen.Screen guiScreen) {
-        if (guiScreen != getMinecraft().currentScreen)
+    private void onGuiInit(net.minecraft.client.gui.screens.Screen guiScreen) {
+        if (guiScreen != getMinecraft().screen)
             return; // people tend to construct GuiScreens without opening them
 
         VanillaGuiScreen vanillaGui = VanillaGuiScreen.wrap(guiScreen);
@@ -50,7 +50,7 @@ public class GuiBackgroundProcesses extends EventRegistrations {
         }
     }
 
-    private static class Element extends AbstractGuiContainer<Element> {
+    private static class Element extends GuiComponentContainer<Element> {
         private GuiElement inner;
 
         Element(GuiElement inner) {

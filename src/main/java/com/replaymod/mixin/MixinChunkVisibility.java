@@ -19,10 +19,11 @@ public abstract class MixinChunkVisibility {
      * SP worlds (i.e. not in a replay or MP).
      * As a result, it may end up in a non-0 state, which will cause isFinished
      * to unconditionally return false, therefore unconditionally setting
-     * needsTerrainUpdate to true on each call to WorldRenderer.setupTerrain,
+     * needsTerrainUpdate to true on each call to LevelRenderer.setupTerrain,
      * therefore unnecessarily consuming resources and live-locking when
      * rendering the shader pass.
      */
+    @SuppressWarnings("UnresolvedMixinReference")
     @Inject(method = "reset", at = @At("HEAD"), remap = false)
     private static void replayModCompat_fixImproperReset(CallbackInfo ci) {
         MixinChunkVisibility.counter = 0;

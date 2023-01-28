@@ -1,6 +1,6 @@
 package com.replaymod.extras;
 
-import com.replaymod.core.KeyBindingRegistry;
+import com.replaymod.core.KeyMappingRegistry;
 import com.replaymod.core.ReplayMod;
 import com.replaymod.gui.GuiRenderer;
 import com.replaymod.gui.RenderInfo;
@@ -16,8 +16,8 @@ import com.replaymod.gui.utils.EventRegistrations;
 import com.replaymod.replay.events.ReplayOpenedCallback;
 import com.replaymod.replay.gui.overlay.GuiReplayOverlay;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.resources.I18n;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.language.I18n;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -67,20 +67,20 @@ public class HotkeyButtons extends EventRegistrations implements Extra {
                 }
             }.setLayout(panelLayout = new GridLayout().setSpacingX(5).setSpacingY(5).setColumns(1));
 
-            final KeyBindingRegistry keyBindingRegistry = mod.getKeyBindingRegistry();
+            final KeyMappingRegistry keyBindingRegistry = mod.getKeyMappingRegistry();
             keyBindingRegistry.getBindings().values().stream()
-                    .sorted(Comparator.comparing(it -> I18n.format(it.name)))
+                    .sorted(Comparator.comparing(it -> I18n.get(it.name)))
                     .forEachOrdered(keyBinding -> {
                         GuiButton button = new GuiButton() {
                             @Override
                             public void draw(GuiRenderer renderer, ReadableDimension size, RenderInfo renderInfo) {
-                                // There doesn't seem to be an KeyBindingUpdate event, so we'll just update it every time
+                                // There doesn't seem to be an KeyMappingUpdate event, so we'll just update it every time
                                 setLabel(keyBinding.isBound() ? keyBinding.getBoundKey() : "");
 
                                 if (keyBinding.supportsAutoActivation()) {
                                     setTooltip(new GuiTooltip().setText(new String[]{
-                                            I18n.format("replaymod.gui.ingame.autoactivating"),
-                                            I18n.format("replaymod.gui.ingame.autoactivating."
+                                            I18n.get("replaymod.gui.ingame.autoactivating"),
+                                            I18n.get("replaymod.gui.ingame.autoactivating."
                                                     + (keyBinding.isAutoActivating() ? "disable" : "enable")),
                                     }));
                                     setLabelColor(keyBinding.isAutoActivating() ? 0x00ff00 : 0xe0e0e0);

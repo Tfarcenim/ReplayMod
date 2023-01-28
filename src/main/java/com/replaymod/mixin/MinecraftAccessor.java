@@ -1,13 +1,14 @@
 package com.replaymod.mixin;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.crash.CrashReport;
-import net.minecraft.util.Timer;
+import net.minecraft.CrashReport;
+import net.minecraft.client.Timer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 
 @Mixin(Minecraft.class)
@@ -18,16 +19,16 @@ public interface MinecraftAccessor {
     @Accessor
     void setTimer(Timer value);
 
-    @Accessor("futureRefreshResources")
+    @Accessor("pendingReload")
     CompletableFuture<Void> getResourceReloadFuture();
 
-    @Accessor("futureRefreshResources")
+    @Accessor("pendingReload")
     void setResourceReloadFuture(CompletableFuture<Void> value);
 
-    @Accessor("queueChunkTracking")
+    @Accessor("progressTasks")
     Queue<Runnable> getRenderTaskQueue();
 
-    @Accessor
-    CrashReport getCrashReporter();
+    @Accessor("delayedCrash")
+    Supplier<CrashReport> getCrashReporter();
 
 }

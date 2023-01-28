@@ -75,7 +75,7 @@ public class YoutubeUploader {
         this.videoVisibility = videoVisibility;
         this.videoSnippet = videoSnippet;
         this.httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-        this.dataStoreFactory = new FileDataStoreFactory(minecraft.gameDir);
+        this.dataStoreFactory = new FileDataStoreFactory(minecraft.gameDirectory);
 
     }
 

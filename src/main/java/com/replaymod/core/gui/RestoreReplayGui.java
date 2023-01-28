@@ -5,7 +5,7 @@ import com.google.gson.Gson;
 import com.replaymod.core.ReplayMod;
 import com.replaymod.core.utils.Utils;
 import com.replaymod.core.versions.MCVer;
-import com.replaymod.gui.container.AbstractGuiScreen;
+import com.replaymod.gui.container.GuiComponentScreen;
 import com.replaymod.gui.container.GuiPanel;
 import com.replaymod.gui.container.GuiScreen;
 import com.replaymod.gui.container.VanillaGuiScreen;
@@ -20,7 +20,7 @@ import com.replaymod.replaystudio.io.ReplayInputStream;
 import com.replaymod.replaystudio.io.ReplayOutputStream;
 import com.replaymod.replaystudio.replay.ReplayFile;
 import com.replaymod.replaystudio.replay.ReplayMetaData;
-import net.minecraft.crash.CrashReport;
+import net.minecraft.CrashReport;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
@@ -34,7 +34,7 @@ import java.util.function.Consumer;
 import static com.replaymod.replaystudio.util.Utils.readInt;
 import static com.replaymod.replaystudio.util.Utils.writeInt;
 
-public class RestoreReplayGui extends AbstractGuiScreen<RestoreReplayGui> {
+public class RestoreReplayGui extends GuiComponentScreen<RestoreReplayGui> {
     private static Logger LOGGER = LogManager.getLogger();
 
     public final GuiScreen parent;
@@ -99,8 +99,8 @@ public class RestoreReplayGui extends AbstractGuiScreen<RestoreReplayGui> {
                 tryRecover(progressBar::setProgress);
             } catch (IOException e) {
                 LOGGER.error("Recovering replay file:", e);
-                CrashReport crashReport = CrashReport.makeCrashReport(e, "Recovering replay file");
-                core.runLater(() -> Utils.error(LOGGER, VanillaGuiScreen.wrap(getMinecraft().currentScreen), crashReport, () -> {
+                CrashReport crashReport = CrashReport.forThrowable(e, "Recovering replay file");
+                core.runLater(() -> Utils.error(LOGGER, VanillaGuiScreen.wrap(getMinecraft().screen), crashReport, () -> {
                 }));
             } finally {
                 core.runLater(() -> core.getBackgroundProcesses().removeProcess(savingProcess));
@@ -119,7 +119,7 @@ public class RestoreReplayGui extends AbstractGuiScreen<RestoreReplayGui> {
             // Try to restore replay duration
             // We need to re-write the packet data in case there are any incomplete packets dangling at the end
             try (ReplayInputStream in = replayFile.getPacketData(MCVer.getPacketTypeRegistry(true));
-                 ReplayOutputStream out = replayFile.writePacketData()) {
+                 ReplayOutputStream out = (ReplayOutputStream) replayFile.write("restoreReplayGui.json")) {
                 while (true) {
                     // To prevent failing at un-parsable packets and to support recovery in minimal mode,
                     // we do not use the ReplayIn/OutputStream methods but instead parse the packets ourselves.

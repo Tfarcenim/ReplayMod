@@ -11,14 +11,15 @@ import com.replaymod.replay.ReplayModReplay;
 import com.replaymod.replay.Setting;
 import com.replaymod.replay.gui.screen.GuiReplayViewer;
 import de.johni0702.minecraft.gui.utils.lwjgl.Point;
-import net.minecraft.client.gui.screen.IngameMenuScreen;
-import net.minecraft.client.gui.screen.MainMenuScreen;
-import net.minecraft.client.gui.screen.MultiplayerScreen;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.screens.PauseScreen;
+import net.minecraft.client.gui.screens.TitleScreen;
+import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,7 +48,7 @@ public class GuiHandler extends EventRegistrations {
     }
 
     private void injectIntoIngameMenu(Screen guiScreen, List<Widget> buttonList) {
-        if (!(guiScreen instanceof IngameMenuScreen)) {
+        if (!(guiScreen instanceof PauseScreen)) {
             return;
         }
 
@@ -55,51 +56,53 @@ public class GuiHandler extends EventRegistrations {
             // Pause replay when menu is opened
             mod.getReplayHandler().getReplaySender().setReplaySpeed(0);
 
-            final TranslationTextComponent BUTTON_OPTIONS = new TranslationTextComponent("menu.options");
-            final TranslationTextComponent BUTTON_EXIT_SERVER = new TranslationTextComponent("menu.disconnect");
-            final TranslationTextComponent BUTTON_ADVANCEMENTS = new TranslationTextComponent("gui.advancements");
-            final TranslationTextComponent BUTTON_STATS = new TranslationTextComponent("gui.stats");
-            final TranslationTextComponent BUTTON_OPEN_TO_LAN = new TranslationTextComponent("menu.shareToLan");
+            final TranslatableComponent BUTTON_OPTIONS = new TranslatableComponent("menu.options");
+            final TranslatableComponent BUTTON_EXIT_SERVER = new TranslatableComponent("menu.disconnect");
+            final TranslatableComponent BUTTON_ADVANCEMENTS = new TranslatableComponent("gui.advancements");
+            final TranslatableComponent BUTTON_STATS = new TranslatableComponent("gui.stats");
+            final TranslatableComponent BUTTON_OPEN_TO_LAN = new TranslatableComponent("menu.shareToLan");
 
 
-            Widget achievements = null, stats = null;
+            AbstractWidget achievements = null, stats = null;
             for (Widget b : new ArrayList<>(buttonList)) {
-                boolean remove = false;
-                ITextComponent id = b.getMessage();
-                if (id == null) {
-                    // likely a button of some third-part mod
-                    // e.g. https://github.com/Pokechu22/WorldDownloader/blob/b1b279f948beec2d7dac7524eea8f584a866d8eb/share_14/src/main/java/wdl/WDLHooks.java#L491
-                    continue;
-                }
-                if (id.equals(BUTTON_EXIT_SERVER)) {
-                    // Replace "Exit Server" button with "Exit Replay" button
-                    remove = true;
-                    addButton(guiScreen, new InjectedButton(
-                            guiScreen,
-                            BUTTON_EXIT_REPLAY,
-                            b.x,
-                            b.y,
-                            b.getWidth(),
-                            b.getHeight(),
-                            "replaymod.gui.exit",
-                            this::onButton
-                    ));
-                } else if (id.equals(BUTTON_ADVANCEMENTS)) {
-                    // Remove "Advancements", "Stats" and "Open to LAN" buttons
-                    remove = true;
-                    achievements = b;
-                } else if (id.equals(BUTTON_STATS)) {
-                    remove = true;
-                    stats = b;
-                } else if (id.equals(BUTTON_OPEN_TO_LAN)) {
-                    remove = true;
-                } else if (id.equals(BUTTON_OPTIONS)) {
-                    b.setWidth(204);
-                }
-                if (remove) {
-                    // Moving the button far off-screen is easier to do cross-version than actually removing it
-                    b.x = -1000;
-                    b.y = -1000;
+                if (b instanceof AbstractWidget b1){
+                    boolean remove = false;
+                    Component id = b1.getMessage();
+                    if (id == null) {
+                        // likely a button of some third-part mod
+                        // e.g. https://github.com/Pokechu22/WorldDownloader/blob/b1b279f948beec2d7dac7524eea8f584a866d8eb/share_14/src/main/java/wdl/WDLHooks.java#L491
+                        continue;
+                    }
+                    if (id.equals(BUTTON_EXIT_SERVER)) {
+                        // Replace "Exit Server" button with "Exit Replay" button
+                        remove = true;
+                        addButton(guiScreen, new InjectedButton(
+                                guiScreen,
+                                BUTTON_EXIT_REPLAY,
+                                b1.x,
+                                b1.y,
+                                b1.getWidth(),
+                                b1.getHeight(),
+                                "replaymod.gui.exit",
+                                this::onButton
+                        ));
+                    } else if (id.equals(BUTTON_ADVANCEMENTS)) {
+                        // Remove "Advancements", "Stats" and "Open to LAN" buttons
+                        remove = true;
+                        achievements = b1;
+                    } else if (id.equals(BUTTON_STATS)) {
+                        remove = true;
+                        stats = b1;
+                    } else if (id.equals(BUTTON_OPEN_TO_LAN)) {
+                        remove = true;
+                    } else if (id.equals(BUTTON_OPTIONS)) {
+                        b1.setWidth(204);
+                    }
+                    if (remove) {
+                        // Moving the button far off-screen is easier to do cross-version than actually removing it
+                        b1.x = -1000;
+                        b1.y = -1000;
+                    }
                 }
             }
             if (achievements != null && stats != null) {
@@ -131,9 +134,10 @@ public class GuiHandler extends EventRegistrations {
             int moveBy
     ) {
         buttons.stream()
-                .filter(button -> button.x <= xEnd && button.x + button.getWidth() >= xStart)
-                .filter(button -> button.y <= yEnd && button.y + button.getHeight() >= yStart)
-                .forEach(button -> button.y += moveBy);
+                .filter(button->button instanceof AbstractWidget)
+                .filter(button -> ((AbstractWidget)button).x <= xEnd && ((AbstractWidget)button).x + ((AbstractWidget)button).getWidth() >= xStart)
+                .filter(button -> ((AbstractWidget)button).y <= yEnd && ((AbstractWidget)button).y + ((AbstractWidget)button).getHeight() >= yStart)
+                .forEach(button -> ((AbstractWidget)button).y += moveBy);
     }
 
     {
@@ -141,7 +145,7 @@ public class GuiHandler extends EventRegistrations {
     }
 
     private void ensureReplayStopped(Screen guiScreen, List<Widget> buttonList) {
-        if (!(guiScreen instanceof MainMenuScreen || guiScreen instanceof MultiplayerScreen)) {
+        if (!(guiScreen instanceof TitleScreen || guiScreen instanceof JoinMultiplayerScreen)) {
             return;
         }
 
@@ -165,7 +169,13 @@ public class GuiHandler extends EventRegistrations {
     }
 
     private void injectIntoMainMenu(Screen guiScreen, List<Widget> buttonList) {
-        if (!(guiScreen instanceof MainMenuScreen)) {
+        List<AbstractWidget> list = new ArrayList<>();
+        for (Widget w: buttonList) {
+            if (w instanceof AbstractWidget){
+                list.add((AbstractWidget) w);
+            }
+        }
+        if (!(guiScreen instanceof TitleScreen)) {
             return;
         }
 
@@ -188,7 +198,7 @@ public class GuiHandler extends EventRegistrations {
                     if (pos == null) {
                         // Delaying computation so we can take into account buttons
                         // added after our callback.
-                        pos = determineButtonPos(buttonPosition, guiScreen, buttonList);
+                        pos = determineButtonPos(buttonPosition, guiScreen, list);
                     }
                     size(replayButton, 20, 20);
                     pos(replayButton, pos.getX(), pos.getY());
@@ -199,10 +209,10 @@ public class GuiHandler extends EventRegistrations {
 
         int x = guiScreen.width / 2 - 100;
         // We want to position our button below the realms button
-        int y = findButton(buttonList, "menu.online", 14)
+        int y = findButton(list, "menu.online", 14)
                 .map(Optional::of)
                 // or, if someone removed the realms button, we'll alternatively take the multiplayer one
-                .orElse(findButton(buttonList, "menu.multiplayer", 2))
+                .orElse(findButton(list, "menu.multiplayer", 2))
                 // if we found some button, put our button at its position (we'll move it out of the way shortly)
                 .map(it -> it.y)
                 // and if we can't even find that one, then just guess
@@ -233,7 +243,7 @@ public class GuiHandler extends EventRegistrations {
         addButton(guiScreen, button);
     }
 
-    private Point determineButtonPos(MainMenuButtonPosition buttonPosition, Screen guiScreen, List<Widget> buttonList) {
+    private Point determineButtonPos(MainMenuButtonPosition buttonPosition, Screen guiScreen, List<AbstractWidget> buttonList) {
         Point topRight = new Point(guiScreen.width - 20 - 5, 5);
 
         if (buttonPosition == MainMenuButtonPosition.TOP_LEFT) {
@@ -257,7 +267,7 @@ public class GuiHandler extends EventRegistrations {
                                     && button.y + button.getHeight() >= it.y
                     ))
                     // then take the bottom-most and if there's two, the right-most
-                    .max(Comparator.<Widget>comparingInt(it -> it.y).thenComparingInt(it -> it.x))
+                    .max(Comparator.<AbstractWidget>comparingInt(it -> it.y).thenComparingInt(it -> it.x))
                     // and place ourselves next to it
                     .map(it -> new Point(it.x + it.getWidth() + 4, it.y))
                     // if all fails, just go with TOP_RIGHT
@@ -299,15 +309,17 @@ public class GuiHandler extends EventRegistrations {
 
     private void onButton(InjectedButton button) {
         Screen guiScreen = button.guiScreen;
-        if (!button.active) return;
+        if (!button.active) {
+            return;
+        }
 
-        if (guiScreen instanceof MainMenuScreen) {
+        if (guiScreen instanceof TitleScreen) {
             if (button.id == BUTTON_REPLAY_VIEWER) {
                 new GuiReplayViewer(mod).display();
             }
         }
 
-        if (guiScreen instanceof IngameMenuScreen && mod.getReplayHandler() != null) {
+        if (guiScreen instanceof PauseScreen && mod.getReplayHandler() != null) {
             if (button.id == BUTTON_EXIT_REPLAY) {
                 button.active = false;
                 try {
@@ -333,7 +345,7 @@ public class GuiHandler extends EventRegistrations {
                     y,
                     width,
                     height,
-                    new TranslationTextComponent(buttonText)
+                    new TranslatableComponent(buttonText)
                     , self -> onClick.accept((InjectedButton) self)
             );
             this.guiScreen = guiScreen;

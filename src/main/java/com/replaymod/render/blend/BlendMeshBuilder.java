@@ -6,11 +6,11 @@ import com.replaymod.render.blend.data.DMesh;
 import de.johni0702.minecraft.gui.utils.lwjgl.vector.ReadableVector3f;
 import de.johni0702.minecraft.gui.utils.lwjgl.vector.Vector2f;
 import de.johni0702.minecraft.gui.utils.lwjgl.vector.Vector3f;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.client.renderer.vertex.VertexFormat;
-import net.minecraft.client.renderer.vertex.VertexFormatElement;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormatElement;
 import org.lwjgl.opengl.GL11;
 
 import java.nio.ByteBuffer;
@@ -41,13 +41,13 @@ public class BlendMeshBuilder
     }
 
     @Override
-    public void begin(int mode, VertexFormat vertexFormat) {
+    public void begin(VertexFormat.Mode mode, VertexFormat vertexFormat) {
         if (isDrawing) {
             if (!wellBehaved) {
                 // Someone probably finished drawing with the global instance instead of this one,
                 // let's just assume that what's happened and finish our last draw by ourselves
                 // (might miss correct texture though)
-                super.finishDrawing();
+                super.end();
                 addBufferToMesh();
             } else {
                 throw new IllegalStateException("Already drawing!");
@@ -56,8 +56,8 @@ public class BlendMeshBuilder
         this.isDrawing = true;
 
         if (!wellBehaved) {
-            // In case the calling code finishes with Tessellator.getInstance().draw()
-            Tessellator.getInstance().getBuffer().begin(mode, DefaultVertexFormats.POSITION_TEX_COLOR);
+            // In case the calling code finishes with Tesselator.getInstance().draw()
+            Tesselator.getInstance().getBuilder().begin(mode, DefaultVertexFormat.POSITION_TEX_COLOR);
         }
 
         super.begin(mode, vertexFormat);
@@ -66,21 +66,21 @@ public class BlendMeshBuilder
     public void maybeFinishDrawing() {
         if (isDrawing) {
             isDrawing = false;
-            super.finishDrawing();
+            super.end();
             addBufferToMesh();
         }
     }
 
     @Override
-    public void finishDrawing() {
+    public void end() {
         if (!isDrawing) {
             throw new IllegalStateException("Not building!");
         } else {
             if (!wellBehaved) {
-                Tessellator.getInstance().getBuffer().finishDrawing();
+                Tesselator.getInstance().getBuilder().end();
             }
 
-            super.finishDrawing();
+            super.end();
 
             addBufferToMesh();
 
@@ -92,16 +92,16 @@ public class BlendMeshBuilder
     }
 
     public static DMesh addBufferToMesh(BufferBuilder bufferBuilder, DMesh mesh, ReadableVector3f vertOffset) {
-        Pair<DrawState, ByteBuffer> data = bufferBuilder.getNextBuffer();
-        return addBufferToMesh(data.getSecond(), data.getFirst().getDrawMode(), data.getFirst().getFormat(), mesh, vertOffset);
+        Pair<DrawState, ByteBuffer> data = bufferBuilder.popNextBuffer();
+        return addBufferToMesh(data.getSecond(), data.getFirst().mode(), data.getFirst().format(), mesh, vertOffset);
     }
 
-    public static DMesh addBufferToMesh(ByteBuffer buffer, int mode, VertexFormat vertexFormat, DMesh mesh, ReadableVector3f vertOffset) {
-        int vertexCount = buffer.remaining() / vertexFormat.getSize();
+    public static DMesh addBufferToMesh(ByteBuffer buffer, VertexFormat.Mode mode, VertexFormat vertexFormat, DMesh mesh, ReadableVector3f vertOffset) {
+        int vertexCount = buffer.remaining() / vertexFormat.getVertexSize();
         return addBufferToMesh(buffer, vertexCount, mode, vertexFormat, mesh, vertOffset);
     }
 
-    public static DMesh addBufferToMesh(ByteBuffer buffer, int vertexCount, int mode, VertexFormat vertexFormat, DMesh mesh, ReadableVector3f vertOffset) {
+    public static DMesh addBufferToMesh(ByteBuffer buffer, int vertexCount, VertexFormat.Mode mode, VertexFormat vertexFormat, DMesh mesh, ReadableVector3f vertOffset) {
         if (mesh == null) {
             mesh = new DMesh();
         }
@@ -115,7 +115,7 @@ public class BlendMeshBuilder
         int elementOffset = 0;
         for (VertexFormatElement element : getElements(vertexFormat)) {
             int offset = elementOffset;
-            elementOffset += element.getSize();
+            elementOffset += element.getByteSize();
             switch (element.getUsage()) {
                 case POSITION:
                     if (element.getType() != VertexFormatElement.Type.FLOAT) {
@@ -130,7 +130,9 @@ public class BlendMeshBuilder
                     colorOffset = offset;
                     break;
                 case UV:
-                    if (element.getIndex() != 0) break;
+                    if (element.getIndex() != 0) {
+                        break;
+                    }
                     if (element.getType() != VertexFormatElement.Type.FLOAT) {
                         throw new UnsupportedOperationException("Only float is supported for UV elements!");
                     }
@@ -139,13 +141,15 @@ public class BlendMeshBuilder
             }
             index++;
         }
-        if (posOffset == -1) throw new IllegalStateException("No position element in " + vertexFormat);
+        if (posOffset == -1) {
+            throw new IllegalStateException("No position element in " + vertexFormat);
+        }
 
         // Extract vertex components from byte buffer
         List<DMesh.Vertex> vertices = new ArrayList<>(vertexCount);
         List<Vector2f> uvs = new ArrayList<>(vertexCount);
         List<Integer> colors = new ArrayList<>(vertexCount);
-        int step = vertexFormat.getSize();
+        int step = vertexFormat.getVertexSize();
         for (int offset = 0; offset < vertexCount * step; offset += step) {
             vertices.add(new DMesh.Vertex(
                     buffer.getFloat(offset) - vertOffset.getX(),
@@ -179,7 +183,7 @@ public class BlendMeshBuilder
 
         // Bundle vertices into shapes and add them to the mesh
         switch (mode) {
-            case GL11.GL_TRIANGLES:
+            case TRIANGLES:
                 for (int i = 0; i < vertices.size(); i += 3) {
                     mesh.addTriangle(
                             vertices.get(i),
@@ -195,7 +199,7 @@ public class BlendMeshBuilder
                     );
                 }
                 break;
-            case GL11.GL_QUADS:
+            case QUADS:
                 for (int i = 0; i < vertices.size(); i += 4) {
                     mesh.addQuad(
                             vertices.get(i),

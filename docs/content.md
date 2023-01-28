@@ -183,7 +183,7 @@ You can easily toggle between **Linear** and **Cubic Interpolation** using the `
 A normal **Path Preview**
 
 Using the `H` key, you can toggle a **visual representation** of your Camera Path.
-If enabled, you will see a **Red Line** in the World following the Camrea Path.
+If enabled, you will see a **Red Line** in the Level following the Camrea Path.
 
 The [Path Interpolation Setting](#replaying-paths-place-interpolation) is respected in this preview.
 
@@ -388,7 +388,7 @@ Therefore, it is recommended to **always stabilize the camera's Pitch and Roll**
 A screenshot of a video rendered with a **Red Chroma Key Setting**
 
 This is an experimental setting for video producers which allows you to change the sky color to a fixed color.
-Using a **Video Editing Software** like **Adobe After Effects** or **Sony Vegas**, you can change the sky color to transparency and add your own footage as sky. Read more about **Chroma Keying** [here](https://en.wikipedia.org/wiki/Chroma_key).
+Using a **Video Editing Software** like **Adobe After MobEffects** or **Sony Vegas**, you can change the sky color to transparency and add your own footage as sky. Read more about **Chroma Keying** [here](https://en.wikipedia.org/wiki/Chroma_key).
 
 > **Note:** For best results, you should **disable clouds** before rendering, as they are transparent.
 

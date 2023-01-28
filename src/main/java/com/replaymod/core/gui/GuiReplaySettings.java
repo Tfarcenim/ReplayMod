@@ -1,7 +1,7 @@
 package com.replaymod.core.gui;
 
 import com.replaymod.core.SettingsRegistry;
-import com.replaymod.gui.container.AbstractGuiScreen;
+import com.replaymod.gui.container.GuiComponentScreen;
 import com.replaymod.gui.container.GuiPanel;
 import com.replaymod.gui.element.GuiButton;
 import com.replaymod.gui.element.GuiElement;
@@ -14,17 +14,17 @@ import com.replaymod.gui.layout.VerticalLayout;
 import com.replaymod.gui.utils.Consumer;
 import de.johni0702.minecraft.gui.utils.lwjgl.Dimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
-import net.minecraft.client.resources.I18n;
+import net.minecraft.client.resources.language.I18n;
 
 import java.util.List;
 
-public class GuiReplaySettings extends AbstractGuiScreen<GuiReplaySettings> {
+public class GuiReplaySettings extends GuiComponentScreen<GuiReplaySettings> {
 
-    public GuiReplaySettings(final net.minecraft.client.gui.screen.Screen parent, final SettingsRegistry settingsRegistry) {
+    public GuiReplaySettings(final net.minecraft.client.gui.screens.Screen parent, final SettingsRegistry settingsRegistry) {
         final GuiButton doneButton = new GuiButton(this).setI18nLabel("gui.done").setSize(200, 20).onClick(new Runnable() {
             @Override
             public void run() {
-                getMinecraft().displayGuiScreen(parent);
+                getMinecraft().setScreen(parent);
             }
         });
 
@@ -42,7 +42,7 @@ public class GuiReplaySettings extends AbstractGuiScreen<GuiReplaySettings> {
                     @SuppressWarnings("unchecked") final SettingsRegistry.SettingKey<Boolean> booleanKey = (SettingsRegistry.SettingKey<Boolean>) key;
                     final GuiToggleButton button = new GuiToggleButton<>().setSize(150, 20)
                             .setI18nLabel(key.getDisplayString()).setSelected(settingsRegistry.get(booleanKey) ? 0 : 1)
-                            .setValues(I18n.format("options.on"), I18n.format("options.off"));
+                            .setValues(I18n.get("options.on"), I18n.get("options.off"));
                     element = button.onClick(new Runnable() {
                         @Override
                         public void run() {
@@ -60,7 +60,7 @@ public class GuiReplaySettings extends AbstractGuiScreen<GuiReplaySettings> {
                     for (int j = 0; j < entries.length; j++) {
                         Object value = values.get(j);
                         entries[j] = new MultipleChoiceDropdownEntry(value,
-                                I18n.format(multipleChoiceKey.getDisplayString()) + ": " + I18n.format(value.toString()));
+                                I18n.get(multipleChoiceKey.getDisplayString()) + ": " + I18n.get(value.toString()));
                         if (currentValue.equals(value)) {
                             selected = j;
                         }

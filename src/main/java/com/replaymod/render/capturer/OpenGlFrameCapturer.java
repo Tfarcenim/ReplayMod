@@ -1,5 +1,6 @@
 package com.replaymod.render.capturer;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.replaymod.core.versions.MCVer;
 import com.replaymod.render.frame.OpenGlFrame;
 import com.replaymod.render.rendering.Frame;
@@ -9,7 +10,7 @@ import de.johni0702.minecraft.gui.utils.lwjgl.Dimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.WritableDimension;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.shader.Framebuffer;
+import com.mojang.blaze3d.pipeline.RenderTarget;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 
@@ -17,20 +18,20 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import static com.mojang.blaze3d.platform.GlStateManager.*;
-import static com.replaymod.core.versions.MCVer.resizeMainWindow;
+import static com.replaymod.core.versions.MCVer.resizeWindow;
 import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
 
 public abstract class OpenGlFrameCapturer<F extends Frame, D extends CaptureData> implements FrameCapturer<F> {
-    protected final WorldRenderer worldRenderer;
+    protected final LevelRenderer levelRenderer;
     protected final RenderInfo renderInfo;
     protected int framesDone;
-    private Framebuffer frameBuffer;
+    private RenderTarget frameBuffer;
 
     protected final Minecraft mc = MCVer.getMinecraft();
 
-    public OpenGlFrameCapturer(WorldRenderer worldRenderer, RenderInfo renderInfo) {
-        this.worldRenderer = worldRenderer;
+    public OpenGlFrameCapturer(LevelRenderer levelRenderer, RenderInfo renderInfo) {
+        this.levelRenderer = levelRenderer;
         this.renderInfo = renderInfo;
     }
 
@@ -59,9 +60,9 @@ public abstract class OpenGlFrameCapturer<F extends Frame, D extends CaptureData
         return renderInfo.getFrameSize().getHeight();
     }
 
-    protected Framebuffer frameBuffer() {
+    protected RenderTarget frameBuffer() {
         if (frameBuffer == null) {
-            frameBuffer = mc.getFramebuffer();
+            frameBuffer = mc.getMainRenderTarget();
         }
         return frameBuffer;
     }
@@ -76,29 +77,29 @@ public abstract class OpenGlFrameCapturer<F extends Frame, D extends CaptureData
     }
 
     protected OpenGlFrame renderFrame(int frameId, float partialTicks, D captureData) {
-        resizeMainWindow(mc, getFrameWidth(), getFrameHeight());
+        resizeWindow(mc, getFrameWidth(), getFrameHeight());
 
-        pushMatrix();
-        frameBuffer().bindFramebuffer(true);
+        GL11.glPushMatrix();
+        frameBuffer().bindWrite(true);
 
-        clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
+        RenderSystem.clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
                 , false
         );
-        enableTexture();
+        RenderSystem.enableTexture();
 
-        worldRenderer.renderWorld(partialTicks, captureData);
+        levelRenderer.renderWorld(partialTicks, captureData);
 
-        frameBuffer().unbindFramebuffer();
-        popMatrix();
+        frameBuffer().unbindWrite();
+        GL11.glPopMatrix();
 
         return captureFrame(frameId, captureData);
     }
 
     protected OpenGlFrame captureFrame(int frameId, D captureData) {
         ByteBuffer buffer = ByteBufferPool.allocate(getFrameWidth() * getFrameHeight() * 4);
-        frameBuffer().bindFramebuffer(true);
+        frameBuffer().bindWrite(true);
         GL11.glReadPixels(0, 0, getFrameWidth(), getFrameHeight(), GL12.GL_BGRA, GL11.GL_UNSIGNED_BYTE, buffer);
-        frameBuffer().unbindFramebuffer();
+        frameBuffer().unbindWrite();
         buffer.rewind();
 
         return new OpenGlFrame(frameId, new Dimension(getFrameWidth(), getFrameHeight()), 4, buffer);

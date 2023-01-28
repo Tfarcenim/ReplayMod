@@ -12,10 +12,10 @@ import com.replaymod.gui.utils.Colors;
 import com.replaymod.replay.ReplayModReplay;
 import de.johni0702.minecraft.gui.utils.lwjgl.Dimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerModelPart;
-import net.minecraft.potion.Effects;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.player.PlayerModelPart;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -73,25 +73,25 @@ public class PlayerOverviewGui extends GuiScreen implements Closeable {
 
     private final PlayerOverview extra;
 
-    public PlayerOverviewGui(final PlayerOverview extra, List<PlayerEntity> players) {
+    public PlayerOverviewGui(final PlayerOverview extra, List<Player> players) {
         this.extra = extra;
 
         Collections.sort(players, new PlayerComparator()); // Sort by name, spectators last
-        for (final PlayerEntity p : players) {
-            final ResourceLocation texture = Utils.getResourceLocationForPlayerUUID(p.getUniqueID());
+        for (final Player p : players) {
+            final ResourceLocation texture = Utils.getResourceLocationForPlayerUUID(p.getUUID());
             final GuiClickable panel = new GuiClickable().setLayout(new HorizontalLayout().setSpacing(2)).addElements(
                     new HorizontalLayout.Data(0.5), new GuiImage() {
                         @Override
                         public void draw(GuiRenderer renderer, ReadableDimension size, RenderInfo renderInfo) {
                             renderer.bindTexture(texture);
                             renderer.drawTexturedRect(0, 0, 8, 8, 16, 16, 8, 8, 64, 64);
-                            if (p.isWearing(PlayerModelPart.HAT)) {
+                            if (p.isModelPartShown(PlayerModelPart.HAT)) {
                                 renderer.drawTexturedRect(0, 0, 40, 8, size.getWidth(), size.getHeight(), 8, 8, 64, 64);
                             }
                         }
                     }.setSize(16, 16),
                     new GuiLabel().setText(
-                            p.getName().getUnformattedComponentText()
+                            p.getName().getContents()
                     ).setColor(isSpectator(p) ? Colors.DKGREY : Colors.WHITE)
             ).onClick(new Runnable() {
                 @Override
@@ -102,10 +102,10 @@ public class PlayerOverviewGui extends GuiScreen implements Closeable {
             final GuiCheckbox checkbox = new GuiCheckbox() {
                 @Override
                 public GuiCheckbox setChecked(boolean checked) {
-                    extra.setHidden(p.getUniqueID(), !checked);
+                    extra.setHidden(p.getUUID(), !checked);
                     return super.setChecked(checked);
                 }
-            }.setChecked(!extra.isHidden(p.getUniqueID()));
+            }.setChecked(!extra.isHidden(p.getUUID()));
             new GuiPanel(playersScrollable.getListPanel()).setLayout(new CustomLayout<GuiPanel>() {
                 @Override
                 protected void layout(GuiPanel container, int width, int height) {
@@ -135,16 +135,20 @@ public class PlayerOverviewGui extends GuiScreen implements Closeable {
         extra.saveHiddenPlayers();
     }
 
-    private static boolean isSpectator(PlayerEntity e) {
-        return e.isInvisible() && e.getActivePotionEffect(Effects.INVISIBILITY) == null;
+    private static boolean isSpectator(Player e) {
+        return e.isInvisible() && e.getEffect(MobEffects.INVISIBILITY) == null;
     }
 
-    private static final class PlayerComparator implements Comparator<PlayerEntity> {
+    private static final class PlayerComparator implements Comparator<Player> {
         @Override
-        public int compare(PlayerEntity o1, PlayerEntity o2) {
-            if (isSpectator(o1) && !isSpectator(o2)) return 1;
-            if (isSpectator(o2) && !isSpectator(o1)) return -1;
-            return o1.getName().getUnformattedComponentText().compareToIgnoreCase(o2.getName().getUnformattedComponentText());
+        public int compare(Player o1, Player o2) {
+            if (isSpectator(o1) && !isSpectator(o2)) {
+                return 1;
+            }
+            if (isSpectator(o2) && !isSpectator(o1)) {
+                return -1;
+            }
+            return o1.getName().getContents().compareToIgnoreCase(o2.getName().getContents());
         }
     }
 }

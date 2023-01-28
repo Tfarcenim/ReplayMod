@@ -1,11 +1,11 @@
 package com.replaymod.mixin;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.replaymod.replay.camera.CameraEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.vector.Vector3f;
+import net.minecraft.world.entity.Entity;
+import com.mojang.math.Vector3f;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -17,19 +17,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class MixinCamera {
     @Shadow
     @Final
-    private Minecraft mc;
+    private Minecraft minecraft;
 
     @Inject(
-            method = "renderWorld",
+            method = "renderLevel",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/renderer/ActiveRenderInfo;getPitch()F"
+                    target = "Lnet/minecraft/client/Camera;getXRot()F"
             )
     )
-    private void applyRoll(float float_1, long long_1, MatrixStack matrixStack, CallbackInfo ci) {
-        Entity entity = this.mc.getRenderViewEntity() == null ? this.mc.player : this.mc.getRenderViewEntity();
+    private void applyRoll(float float_1, long long_1, PoseStack matrixStack, CallbackInfo ci) {
+        Entity entity = this.minecraft.getCameraEntity() == null ? this.minecraft.player : this.minecraft.getCameraEntity();
         if (entity instanceof CameraEntity) {
-            matrixStack.rotate(Vector3f.ZP.rotationDegrees(((CameraEntity) entity).roll));
+            matrixStack.mulPose(Vector3f.ZP.rotationDegrees(((CameraEntity) entity).roll));
         }
     }
 }

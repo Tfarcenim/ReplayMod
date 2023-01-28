@@ -1,8 +1,8 @@
 package com.replaymod.mixin;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.replaymod.render.hooks.EntityRendererHandler;
-import net.minecraft.client.renderer.ActiveRenderInfo;
+import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.GameRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -11,10 +11,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(GameRenderer.class)
 public abstract class Mixin_Omnidirectional_SkipHand implements EntityRendererHandler.IEntityRenderer {
-    @Inject(method = "renderHand", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "renderItemInHand", at = @At("HEAD"), cancellable = true)
     private void replayModRender_renderSpectatorHand(
-            MatrixStack matrixStack,
-            ActiveRenderInfo camera,
+            PoseStack matrixStack,
+            Camera camera,
             float partialTicks,
             CallbackInfo ci
     ) {

@@ -1,6 +1,6 @@
 package com.replaymod.gui.container;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.replaymod.gui.function.Draggable;
 import com.replaymod.gui.function.Scrollable;
 import com.replaymod.gui.function.Typeable;
@@ -13,7 +13,7 @@ import com.replaymod.gui.versions.callbacks.PostRenderScreenCallback;
 import com.replaymod.gui.versions.callbacks.PreTickCallback;
 import de.johni0702.minecraft.gui.utils.lwjgl.Point;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;
-import net.minecraftforge.client.event.GuiScreenEvent;
+import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
@@ -24,10 +24,10 @@ import java.util.WeakHashMap;
 
 public class VanillaGuiScreen extends GuiScreen implements Draggable, Typeable, Scrollable {
 
-    private static final Map<net.minecraft.client.gui.screen.Screen, VanillaGuiScreen> WRAPPERS =
+    private static final Map<net.minecraft.client.gui.screens.Screen, VanillaGuiScreen> WRAPPERS =
             Collections.synchronizedMap(new WeakHashMap<>());
 
-    public static VanillaGuiScreen wrap(net.minecraft.client.gui.screen.Screen originalGuiScreen) {
+    public static VanillaGuiScreen wrap(net.minecraft.client.gui.screens.Screen originalGuiScreen) {
         VanillaGuiScreen gui = WRAPPERS.get(originalGuiScreen);
         if (gui == null) {
             WRAPPERS.put(originalGuiScreen, gui = new VanillaGuiScreen(originalGuiScreen));
@@ -39,23 +39,23 @@ public class VanillaGuiScreen extends GuiScreen implements Draggable, Typeable, 
     // Use wrap instead and make sure to preserve the existing layout.
     // (or if you really want your own, inline this code)
     @Deprecated
-    public static VanillaGuiScreen setup(net.minecraft.client.gui.screen.Screen originalGuiScreen) {
+    public static VanillaGuiScreen setup(net.minecraft.client.gui.screens.Screen originalGuiScreen) {
         VanillaGuiScreen gui = new VanillaGuiScreen(originalGuiScreen);
         gui.register();
         return gui;
     }
 
-    private final net.minecraft.client.gui.screen.Screen mcScreen;
+    private final net.minecraft.client.gui.screens.Screen mcScreen;
     private final EventHandler eventHandler = new EventHandler();
 
-    public VanillaGuiScreen(net.minecraft.client.gui.screen.Screen mcScreen) {
+    public VanillaGuiScreen(net.minecraft.client.gui.screens.Screen mcScreen) {
         this.mcScreen = mcScreen;
         this.suppressVanillaKeys = true;
 
         super.setBackground(Background.NONE);
     }
 
-    // Needs to be called from or after GuiInitEvent.Post, will auto-unregister on any GuiOpenEvent
+    // Needs to be called from or after GuiInitEvent.Post, will auto-unregister on any ScreenOpenEvent
     public void register() {
         if (!eventHandler.active) {
             eventHandler.active = true;
@@ -67,12 +67,12 @@ public class VanillaGuiScreen extends GuiScreen implements Draggable, Typeable, 
     }
 
     public void display() {
-        getMinecraft().displayGuiScreen(mcScreen);
+        getMinecraft().setScreen(mcScreen);
         register();
     }
 
     @Override
-    public net.minecraft.client.gui.screen.Screen toMinecraft() {
+    public net.minecraft.client.gui.screens.Screen toMinecraft() {
         return mcScreen;
     }
 
@@ -81,7 +81,7 @@ public class VanillaGuiScreen extends GuiScreen implements Draggable, Typeable, 
         throw new UnsupportedOperationException("Cannot set background of vanilla gui screen.");
     }
 
-    private net.minecraft.client.gui.screen.Screen getSuperMcGui() {
+    private net.minecraft.client.gui.screens.Screen getSuperMcGui() {
         return super.toMinecraft();
     }
 
@@ -133,7 +133,7 @@ public class VanillaGuiScreen extends GuiScreen implements Draggable, Typeable, 
             on(InitScreenCallback.Pre.EVENT, this::preGuiInit);
         }
 
-        private void preGuiInit(net.minecraft.client.gui.screen.Screen screen) {
+        private void preGuiInit(net.minecraft.client.gui.screens.Screen screen) {
             if (screen == mcScreen && active) {
                 active = false;
                 unregister();
@@ -146,7 +146,7 @@ public class VanillaGuiScreen extends GuiScreen implements Draggable, Typeable, 
             on(PostRenderScreenCallback.EVENT, this::onGuiRender);
         }
 
-        private void onGuiRender(MatrixStack stack, float partialTicks) {
+        private void onGuiRender(PoseStack stack, float partialTicks) {
             Point mousePos = MouseUtils.getMousePos();
             getSuperMcGui().render(
                     stack,
@@ -164,7 +164,7 @@ public class VanillaGuiScreen extends GuiScreen implements Draggable, Typeable, 
         private boolean handled;
 
         @SubscribeEvent(priority = EventPriority.LOWEST)
-        public void mouseClicked(GuiScreenEvent.MouseClickedEvent event) {
+        public void mouseClicked(ScreenEvent.MouseClickedEvent event) {
             handled = getSuperMcGui().mouseClicked(event.getMouseX(), event.getMouseY(), event.getButton());
             if (handled) {
                 event.setCanceled(true);
@@ -172,7 +172,7 @@ public class VanillaGuiScreen extends GuiScreen implements Draggable, Typeable, 
         }
 
         @SubscribeEvent(priority = EventPriority.LOWEST)
-        public void mouseDrag(GuiScreenEvent.MouseDragEvent event) {
+        public void mouseDrag(ScreenEvent.MouseDragEvent event) {
             handled = getSuperMcGui().mouseDragged(event.getMouseX(), event.getMouseY(), event.getMouseButton(), event.getDragX(), event.getDragY());
             if (handled) {
                 event.setCanceled(true);
@@ -180,7 +180,7 @@ public class VanillaGuiScreen extends GuiScreen implements Draggable, Typeable, 
         }
 
         @SubscribeEvent(priority = EventPriority.LOWEST)
-        public void mouseClicked(GuiScreenEvent.MouseReleasedEvent event) {
+        public void mouseClicked(ScreenEvent.MouseReleasedEvent event) {
             handled = getSuperMcGui().mouseReleased(event.getMouseX(), event.getMouseY(), event.getButton());
             if (handled) {
                 event.setCanceled(true);
@@ -188,7 +188,7 @@ public class VanillaGuiScreen extends GuiScreen implements Draggable, Typeable, 
         }
 
         @SubscribeEvent(priority = EventPriority.LOWEST)
-        public void mouseClicked(GuiScreenEvent.MouseScrollEvent event) {
+        public void mouseClicked(ScreenEvent.MouseScrollEvent event) {
             handled = getSuperMcGui().mouseScrolled(event.getMouseX(), event.getMouseY(), event.getScrollDelta());
             if (handled) {
                 event.setCanceled(true);
@@ -196,7 +196,7 @@ public class VanillaGuiScreen extends GuiScreen implements Draggable, Typeable, 
         }
 
         @SubscribeEvent(priority = EventPriority.LOWEST)
-        public void mouseClicked(GuiScreenEvent.KeyboardKeyPressedEvent event) {
+        public void mouseClicked(ScreenEvent.KeyboardKeyPressedEvent event) {
             handled = getSuperMcGui().keyPressed(event.getKeyCode(), event.getScanCode(), event.getModifiers());
             if (handled) {
                 event.setCanceled(true);
@@ -204,7 +204,7 @@ public class VanillaGuiScreen extends GuiScreen implements Draggable, Typeable, 
         }
 
         @SubscribeEvent(priority = EventPriority.LOWEST)
-        public void mouseClicked(GuiScreenEvent.KeyboardKeyReleasedEvent event) {
+        public void mouseClicked(ScreenEvent.KeyboardKeyReleasedEvent event) {
             handled = getSuperMcGui().keyReleased(event.getKeyCode(), event.getScanCode(), event.getModifiers());
             if (handled) {
                 event.setCanceled(true);
@@ -212,7 +212,7 @@ public class VanillaGuiScreen extends GuiScreen implements Draggable, Typeable, 
         }
 
         @SubscribeEvent(priority = EventPriority.LOWEST)
-        public void mouseClicked(GuiScreenEvent.KeyboardCharTypedEvent event) {
+        public void mouseClicked(ScreenEvent.KeyboardCharTypedEvent event) {
             handled = getSuperMcGui().charTyped(event.getCodePoint(), event.getModifiers());
             if (handled) {
                 event.setCanceled(true);

@@ -8,19 +8,19 @@ import com.replaymod.mixin.EntityLivingBaseAccessor;
 import com.replaymod.mixin.IntegratedServerAccessor;
 import com.replaymod.recording.packet.PacketListener;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.ClientPlayerEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.EquipmentSlotType;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.IPacket;
-import net.minecraft.network.datasync.EntityDataManager;
-import net.minecraft.network.play.server.*;
-import net.minecraft.server.integrated.IntegratedServer;
-import net.minecraft.util.Hand;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.SoundEvent;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.protocol.game.*;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.client.server.IntegratedServer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.core.BlockPos;
 import net.minecraftforge.event.entity.player.PlayerEvent.ItemPickupEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
@@ -39,9 +39,9 @@ public class RecordingEventHandler extends EventRegistrations {
     private int ticksSinceLastCorrection;
     private boolean wasSleeping;
     private int lastRiding = -1;
-    private Integer rotationYawHeadBefore;
+    private Integer yHeadRotBefore;
     private boolean wasHandActive;
-    private Hand lastActiveHand;
+    private InteractionHand lastActiveHand;
 
     public RecordingEventHandler(PacketListener packetListener) {
         this.packetListener = packetListener;
@@ -50,39 +50,39 @@ public class RecordingEventHandler extends EventRegistrations {
     @Override
     public void register() {
         super.register();
-        ((RecordingEventSender) mc.worldRenderer).setRecordingEventHandler(this);
+        ((RecordingEventSender) mc.levelRenderer).setRecordingEventHandler(this);
     }
 
     @Override
     public void unregister() {
         super.unregister();
-        RecordingEventSender recordingEventSender = ((RecordingEventSender) mc.worldRenderer);
+        RecordingEventSender recordingEventSender = ((RecordingEventSender) mc.levelRenderer);
         if (recordingEventSender.getRecordingEventHandler() == this) {
             recordingEventSender.setRecordingEventHandler(null);
         }
     }
 
-    public void onPacket(IPacket<?> packet) {
+    public void onPacket(Packet<?> packet) {
         packetListener.save(packet);
     }
 
     public void spawnRecordingPlayer() {
         try {
-            ClientPlayerEntity player = mc.player;
+            LocalPlayer player = mc.player;
             assert player != null;
-            packetListener.save(new SSpawnPlayerPacket(player));
-            packetListener.save(new SEntityMetadataPacket(player.getEntityId(), player.getDataManager(), true));
+            packetListener.save(new ClientboundAddPlayerPacket(player));
+            packetListener.save(new ClientboundSetEntityDataPacket(player.getId(), player.getEntityData(), true));
             lastX = lastY = lastZ = null;
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void onClientSound(SoundEvent sound, SoundCategory category,
+    public void onClientSound(SoundEvent sound, SoundSource category,
                               double x, double y, double z, float volume, float pitch) {
         try {
             // Send to all other players in ServerWorldEventHandler#playSoundToAllNearExcept
-            packetListener.save(new SPlaySoundEffectPacket(sound, category, x, y, z, volume, pitch));
+            packetListener.save(new ClientboundSoundPacket(sound, category, x, y, z, volume, pitch));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -91,7 +91,7 @@ public class RecordingEventHandler extends EventRegistrations {
     public void onClientEffect(int type, BlockPos pos, int data) {
         try {
             // Send to all other players in ServerWorldEventHandler#playEvent
-            packetListener.save(new SPlaySoundEventPacket(type, pos, data, false));
+            packetListener.save(new ClientboundLevelEventPacket(type, pos, data, false));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -102,16 +102,18 @@ public class RecordingEventHandler extends EventRegistrations {
     }
 
     private void onPlayerTick() {
-        if (mc.player == null) return;
-        ClientPlayerEntity player = mc.player;
+        if (mc.player == null) {
+            return;
+        }
+        LocalPlayer player = mc.player;
         try {
 
             boolean force = false;
             if (lastX == null || lastY == null || lastZ == null) {
                 force = true;
-                lastX = player.getPosX();
-                lastY = player.getPosY();
-                lastZ = player.getPosZ();
+                lastX = player.getX();
+                lastY = player.getY();
+                lastZ = player.getZ();
             }
 
             ticksSinceLastCorrection++;
@@ -120,23 +122,23 @@ public class RecordingEventHandler extends EventRegistrations {
                 force = true;
             }
 
-            double dx = player.getPosX() - lastX;
-            double dy = player.getPosY() - lastY;
-            double dz = player.getPosZ() - lastZ;
+            double dx = player.getX() - lastX;
+            double dy = player.getY() - lastY;
+            double dz = player.getZ() - lastZ;
 
-            lastX = player.getPosX();
-            lastY = player.getPosY();
-            lastZ = player.getPosZ();
+            lastX = player.getX();
+            lastY = player.getY();
+            lastZ = player.getZ();
 
-            IPacket packet;
+            Packet packet;
             if (force || Math.abs(dx) > 8.0 || Math.abs(dy) > 8.0 || Math.abs(dz) > 8.0) {
-                packet = new SEntityTeleportPacket(player);
+                packet = new ClientboundTeleportEntityPacket(player);
             } else {
-                byte newYaw = (byte) ((int) (player.rotationYaw * 256.0F / 360.0F));
-                byte newPitch = (byte) ((int) (player.rotationPitch * 256.0F / 360.0F));
+                byte newYaw = (byte) ((int) (player.yRot * 256.0F / 360.0F));
+                byte newPitch = (byte) ((int) (player.xRot * 256.0F / 360.0F));
 
-                packet = new SEntityPacket.MovePacket(
-                        player.getEntityId(),
+                packet = new ClientboundMoveEntityPacket.PosRot(
+                        player.getId(),
                         (short) Math.round(dx * 4096), (short) Math.round(dy * 4096), (short) Math.round(dz * 4096),
                         newYaw, newPitch
                         , player.isOnGround()
@@ -146,62 +148,62 @@ public class RecordingEventHandler extends EventRegistrations {
             packetListener.save(packet);
 
             //HEAD POS
-            int rotationYawHead = ((int) (player.rotationYawHead * 256.0F / 360.0F));
+            int yHeadRot = ((int) (player.yHeadRot * 256.0F / 360.0F));
 
-            if (!Objects.equals(rotationYawHead, rotationYawHeadBefore)) {
-                packetListener.save(new SEntityHeadLookPacket(player, (byte) rotationYawHead));
-                rotationYawHeadBefore = rotationYawHead;
+            if (!Objects.equals(yHeadRot, yHeadRotBefore)) {
+                packetListener.save(new ClientboundRotateHeadPacket(player, (byte) yHeadRot));
+                yHeadRotBefore = yHeadRot;
             }
 
-            packetListener.save(new SEntityVelocityPacket(player.getEntityId(),
-                    player.getMotion()
+            packetListener.save(new ClientboundSetEntityMotionPacket(player.getId(),
+                    player.getDeltaMovement()
             ));
 
             //Animation Packets
             //Swing Animation
-            if (player.isSwingInProgress && player.swingProgressInt == 0) {
-                packetListener.save(new SAnimateHandPacket(
+            if (player.swinging && player.swingTime == 0) {
+                packetListener.save(new ClientboundAnimatePacket(
                         player,
-                        player.swingingHand == Hand.MAIN_HAND ? 0 : 3
+                        player.swingingArm == InteractionHand.MAIN_HAND ? 0 : 3
                 ));
             }
 
 			/*
         //Potion Effect Handling
 		List<Integer> found = new ArrayList<Integer>();
-		for(PotionEffect pe : (Collection<PotionEffect>)player.getActivePotionEffects()) {
+		for(PotionEffect pe : (Collection<PotionEffect>)player.getActivePotionMobEffects()) {
 			found.add(pe.getPotionID());
-			if(lastEffects.contains(found)) continue;
+			if(lastMobEffects.contains(found)) continue;
 			S1DPacketEntityEffect pee = new S1DPacketEntityEffect(entityID, pe);
 			packetListener.save(pee);
 		}
 
-		for(int id : lastEffects) {
+		for(int id : lastMobEffects) {
 			if(!found.contains(id)) {
 				S1EPacketRemoveEntityEffect pre = new S1EPacketRemoveEntityEffect(entityID, new PotionEffect(id, 0));
 				packetListener.save(pre);
 			}
 		}
 
-		lastEffects = found;
+		lastMobEffects = found;
 			 */
 
             //Inventory Handling
-            for (EquipmentSlotType slot : EquipmentSlotType.values()) {
-                ItemStack stack = player.getItemStackFromSlot(slot);
+            for (EquipmentSlot slot : EquipmentSlot.values()) {
+                ItemStack stack = player.getItemBySlot(slot);
                 if (playerItems[slot.ordinal()] != stack) {
                     playerItems[slot.ordinal()] = stack;
-                    packetListener.save(new SEntityEquipmentPacket(player.getEntityId(), Collections.singletonList(Pair.of(slot, stack))));
+                    packetListener.save(new ClientboundSetEquipmentPacket(player.getId(), Collections.singletonList(Pair.of(slot, stack))));
                 }
             }
 
             //Leaving Ride
 
-            Entity vehicle = player.getRidingEntity();
-            int vehicleId = vehicle == null ? -1 : vehicle.getEntityId();
+            Entity vehicle = player.getVehicle();
+            int vehicleId = vehicle == null ? -1 : vehicle.getId();
             if (lastRiding != vehicleId) {
                 lastRiding = vehicleId;
-                packetListener.save(new SMountEntityPacket(
+                packetListener.save(new ClientboundSetEntityLinkPacket(
                         player,
                         vehicle
                 ));
@@ -209,18 +211,18 @@ public class RecordingEventHandler extends EventRegistrations {
 
             //Sleeping
             if (!player.isSleeping() && wasSleeping) {
-                packetListener.save(new SAnimateHandPacket(player, 2));
+                packetListener.save(new ClientboundAnimatePacket(player, 2));
                 wasSleeping = false;
             }
 
             // Active hand (e.g. eating, drinking, blocking)
-            if (player.isHandActive() ^ wasHandActive || player.getActiveHand() != lastActiveHand) {
-                wasHandActive = player.isHandActive();
-                lastActiveHand = player.getActiveHand();
-                EntityDataManager dataManager = new EntityDataManager(null);
-                int state = (wasHandActive ? 1 : 0) | (lastActiveHand == Hand.OFF_HAND ? 2 : 0);
-                dataManager.register(EntityLivingBaseAccessor.getLivingFlags(), (byte) state);
-                packetListener.save(new SEntityMetadataPacket(player.getEntityId(), dataManager, true));
+            if (player.isUsingItem() ^ wasHandActive || player.getUsedItemHand() != lastActiveHand) {
+                wasHandActive = player.isUsingItem();
+                lastActiveHand = player.getUsedItemHand();
+                SynchedEntityData dataManager = new SynchedEntityData(null);
+                int state = (wasHandActive ? 1 : 0) | (lastActiveHand == InteractionHand.OFF_HAND ? 2 : 0);
+                dataManager.define(EntityLivingBaseAccessor.getLivingFlags(), (byte) state);
+                packetListener.save(new ClientboundSetEntityDataPacket(player.getId(), dataManager, true));
             }
 
         } catch (Exception e1) {
@@ -232,9 +234,9 @@ public class RecordingEventHandler extends EventRegistrations {
     public void onPickupItem(ItemPickupEvent event) {
         try {
             ItemStack stack = event.getStack();
-            packetListener.save(new SCollectItemPacket(
-                    event.getOriginalEntity().getEntityId(),
-                    event.getPlayer().getEntityId(),
+            packetListener.save(new ClientboundTakeItemEntityPacket(
+                    event.getOriginalEntity().getId(),
+                    event.getPlayer().getId(),
                     event.getStack().getCount()
             ));
         } catch (Exception e) {
@@ -254,7 +256,7 @@ public class RecordingEventHandler extends EventRegistrations {
 
             packetListener.save(new SPacketEntityAttach(event.getPlayer(), event.getMinecart()));
 
-            lastRiding = event.getMinecart().getEntityId();
+            lastRiding = event.getMinecart().getId();
                                                                                                                     } catch(Exception e) {
             e.printStackTrace();
         }
@@ -262,9 +264,9 @@ public class RecordingEventHandler extends EventRegistrations {
     */
 
     public void onBlockBreakAnim(int breakerId, BlockPos pos, int progress) {
-        PlayerEntity thePlayer = mc.player;
-        if (thePlayer != null && breakerId == thePlayer.getEntityId()) {
-            packetListener.save(new SAnimateBlockBreakPacket(breakerId,
+        Player thePlayer = mc.player;
+        if (thePlayer != null && breakerId == thePlayer.getId()) {
+            packetListener.save(new ClientboundBlockDestructionPacket(breakerId,
                     pos,
                     progress));
         }
@@ -275,8 +277,8 @@ public class RecordingEventHandler extends EventRegistrations {
     }
 
     private void checkForGamePaused() {
-        if (mc.isSingleplayer()) {
-            IntegratedServer server = mc.getIntegratedServer();
+        if (mc.hasSingleplayerServer()) {
+            IntegratedServer server = mc.getSingleplayerServer();
             if (server != null && ((IntegratedServerAccessor) server).isGamePaused()) {
                 packetListener.setServerWasPaused();
             }

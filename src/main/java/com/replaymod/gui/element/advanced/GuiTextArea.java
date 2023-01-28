@@ -26,7 +26,7 @@ package com.replaymod.gui.element.advanced;
 
 import com.replaymod.gui.container.GuiContainer;
 
-public class GuiTextArea extends AbstractGuiTextArea<GuiTextArea> {
+public class GuiTextArea extends GuiComponentTextArea<GuiTextArea> {
     public GuiTextArea() {
     }
 

@@ -1,8 +1,8 @@
 package com.replaymod.mixin;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.replaymod.core.events.PreRenderHandCallback;
-import net.minecraft.client.renderer.ActiveRenderInfo;
+import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.GameRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
@@ -17,11 +17,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 }, remap = false)
 public abstract class MixinShadersRender {
 
-    @Inject(method = {"renderHand0", "renderHand1"}, at = @At("HEAD"), cancellable = true, remap = false)
+    @SuppressWarnings("UnresolvedMixinReference")
+    @Inject(method = {"renderItemInHand0", "renderItemInHand1"}, at = @At("HEAD"), cancellable = true, remap = false)
     private static void replayModCompat_disableRenderHand0(
             GameRenderer er,
-            MatrixStack stack,
-            ActiveRenderInfo camera,
+            PoseStack stack,
+            Camera camera,
             float partialTicks,
             CallbackInfo ci) {
         if (PreRenderHandCallback.EVENT.invoker().preRenderHand()) {

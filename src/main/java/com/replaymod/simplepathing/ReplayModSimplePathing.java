@@ -1,6 +1,6 @@
 package com.replaymod.simplepathing;
 
-import com.replaymod.core.KeyBindingRegistry;
+import com.replaymod.core.KeyMappingRegistry;
 import com.replaymod.core.Module;
 import com.replaymod.core.ReplayMod;
 import com.replaymod.core.SettingsRegistry;
@@ -22,9 +22,9 @@ import com.replaymod.replaystudio.replay.ReplayFile;
 import com.replaymod.simplepathing.SPTimeline.SPPath;
 import com.replaymod.simplepathing.gui.GuiPathing;
 import com.replaymod.simplepathing.preview.PathPreview;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.crash.CrashReport;
-import net.minecraft.crash.ReportedException;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.CrashReport;
+import net.minecraft.ReportedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -44,9 +44,9 @@ public class ReplayModSimplePathing extends EventRegistrations implements Module
     public static ReplayModSimplePathing instance;
 
     private ReplayMod core;
-    public KeyBindingRegistry.Binding keyPositionKeyframe;
-    public KeyBindingRegistry.Binding keyTimeKeyframe;
-    public KeyBindingRegistry.Binding keySyncTime;
+    public KeyMappingRegistry.Binding keyPositionKeyframe;
+    public KeyMappingRegistry.Binding keyTimeKeyframe;
+    public KeyMappingRegistry.Binding keySyncTime;
 
     public static Logger LOGGER = LogManager.getLogger();
 
@@ -85,15 +85,15 @@ public class ReplayModSimplePathing extends EventRegistrations implements Module
     }
 
     @Override
-    public void registerKeyBindings(KeyBindingRegistry registry) {
-        pathPreview.registerKeyBindings(registry);
-        core.getKeyBindingRegistry().registerKeyBinding("replaymod.input.keyframerepository", Keyboard.KEY_X, () -> {
+    public void registerKeyMappings(KeyMappingRegistry registry) {
+        pathPreview.registerKeyMappings(registry);
+        core.getKeyMappingRegistry().registerKeyMapping("replaymod.input.keyframerepository", Keyboard.KEY_X, () -> {
             if (guiPathing != null) guiPathing.keyframeRepoButtonPressed();
         }, true);
-        core.getKeyBindingRegistry().registerKeyBinding("replaymod.input.clearkeyframes", Keyboard.KEY_C, () -> {
+        core.getKeyMappingRegistry().registerKeyMapping("replaymod.input.clearkeyframes", Keyboard.KEY_C, () -> {
             if (guiPathing != null) guiPathing.clearKeyframesButtonPressed();
         }, true);
-        keySyncTime = core.getKeyBindingRegistry().registerRepeatedKeyBinding("replaymod.input.synctimeline", Keyboard.KEY_V, () -> {
+        keySyncTime = core.getKeyMappingRegistry().registerRepeatedKeyMapping("replaymod.input.synctimeline", Keyboard.KEY_V, () -> {
             if (guiPathing != null) guiPathing.syncTimeButtonPressed();
         }, true);
         SettingsRegistry settingsRegistry = core.getSettingsRegistry();
@@ -101,24 +101,24 @@ public class ReplayModSimplePathing extends EventRegistrations implements Module
             settingsRegistry.set(Setting.AUTO_SYNC, active);
             settingsRegistry.save();
         });
-        core.getKeyBindingRegistry().registerRaw(Keyboard.KEY_DELETE, () ->
+        core.getKeyMappingRegistry().registerRaw(Keyboard.KEY_DELETE, () ->
                 guiPathing != null && guiPathing.deleteButtonPressed());
-        keyPositionKeyframe = core.getKeyBindingRegistry().registerKeyBinding("replaymod.input.positionkeyframe", Keyboard.KEY_I, () -> {
+        keyPositionKeyframe = core.getKeyMappingRegistry().registerKeyMapping("replaymod.input.positionkeyframe", Keyboard.KEY_I, () -> {
             if (guiPathing != null) guiPathing.toggleKeyframe(SPPath.POSITION, false);
         }, true);
-        core.getKeyBindingRegistry().registerKeyBinding("replaymod.input.positiononlykeyframe", 0, () -> {
+        core.getKeyMappingRegistry().registerKeyMapping("replaymod.input.positiononlykeyframe", 0, () -> {
             if (guiPathing != null) guiPathing.toggleKeyframe(SPPath.POSITION, true);
         }, true);
-        keyTimeKeyframe = core.getKeyBindingRegistry().registerKeyBinding("replaymod.input.timekeyframe", Keyboard.KEY_O, () -> {
+        keyTimeKeyframe = core.getKeyMappingRegistry().registerKeyMapping("replaymod.input.timekeyframe", Keyboard.KEY_O, () -> {
             if (guiPathing != null) guiPathing.toggleKeyframe(SPPath.TIME, false);
         }, true);
-        core.getKeyBindingRegistry().registerKeyBinding("replaymod.input.bothkeyframes", 0, () -> {
+        core.getKeyMappingRegistry().registerKeyMapping("replaymod.input.bothkeyframes", 0, () -> {
             if (guiPathing != null) {
                 guiPathing.toggleKeyframe(SPPath.TIME, false);
                 guiPathing.toggleKeyframe(SPPath.POSITION, false);
             }
         }, true);
-        core.getKeyBindingRegistry().registerRaw(Keyboard.KEY_Z, () -> {
+        core.getKeyMappingRegistry().registerRaw(Keyboard.KEY_Z, () -> {
             if (Screen.hasControlDown() && currentTimeline != null) {
                 Timeline timeline = currentTimeline.getTimeline();
                 if (Screen.hasShiftDown()) {
@@ -134,7 +134,7 @@ public class ReplayModSimplePathing extends EventRegistrations implements Module
             }
             return false;
         });
-        core.getKeyBindingRegistry().registerRaw(Keyboard.KEY_Y, () -> {
+        core.getKeyMappingRegistry().registerRaw(Keyboard.KEY_Y, () -> {
             if (Screen.hasControlDown() && currentTimeline != null) {
                 Timeline timeline = currentTimeline.getTimeline();
                 if (timeline.peekRedoStack() != null) {
@@ -162,7 +162,7 @@ public class ReplayModSimplePathing extends EventRegistrations implements Module
                 }
             }
         } catch (IOException e) {
-            throw new ReportedException(CrashReport.makeCrashReport(e, "Reading timeline"));
+            throw new ReportedException(CrashReport.forThrowable(e, "Reading timeline"));
         }
 
         guiPathing = new GuiPathing(core, this, replayHandler);
@@ -288,7 +288,7 @@ public class ReplayModSimplePathing extends EventRegistrations implements Module
             String serialized = serialization.serialize(Collections.singletonMap("", spTimeline.getTimeline()));
             timeline = serialization.deserialize(serialized).get("");
         } catch (Throwable t) {
-            CrashReport report = CrashReport.makeCrashReport(t, "Cloning timeline");
+            CrashReport report = CrashReport.forThrowable(t, "Cloning timeline");
             throw new ReportedException(report);
         }
 

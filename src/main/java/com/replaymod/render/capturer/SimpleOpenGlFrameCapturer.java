@@ -8,8 +8,8 @@ import java.util.Map;
 
 public class SimpleOpenGlFrameCapturer extends OpenGlFrameCapturer<OpenGlFrame, CaptureData> {
 
-    public SimpleOpenGlFrameCapturer(WorldRenderer worldRenderer, RenderInfo renderInfo) {
-        super(worldRenderer, renderInfo);
+    public SimpleOpenGlFrameCapturer(LevelRenderer levelRenderer, RenderInfo renderInfo) {
+        super(levelRenderer, renderInfo);
     }
 
     @Override

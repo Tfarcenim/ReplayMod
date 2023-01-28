@@ -1,14 +1,15 @@
 package com.replaymod.gui.versions;
 
+import com.mojang.blaze3d.vertex.VertexFormat;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableColor;
-import net.minecraft.client.MainWindow;
+import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.crash.CrashReportCategory;
-import net.minecraftforge.client.event.GuiScreenEvent;
+import net.minecraft.client.gui.Font;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import net.minecraft.CrashReportCategory;
+import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
@@ -23,58 +24,58 @@ public class MCVer {
         return Minecraft.getInstance();
     }
 
-    public static MainWindow newScaledResolution(Minecraft mc) {
-        return mc.getMainWindow();
+    public static Window newScaledResolution(Minecraft mc) {
+        return mc.getWindow();
     }
 
-    public static void addDetail(CrashReportCategory category, String name, Callable<String> callable) {
-        category.addDetail(name, callable::call);
+    public static void setDetail(CrashReportCategory category, String name, Callable<String> callable) {
+        category.setDetail(name, callable::call);
     }
 
     public static void drawRect(int right, int bottom, int left, int top) {
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder vertexBuffer = tessellator.getBuffer();
-        vertexBuffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION);
-        vertexBuffer.pos(right, top, 0).endVertex();
-        vertexBuffer.pos(left, top, 0).endVertex();
-        vertexBuffer.pos(left, bottom, 0).endVertex();
-        vertexBuffer.pos(right, bottom, 0).endVertex();
-        tessellator.draw();
+        Tesselator tessellator = Tesselator.getInstance();
+        BufferBuilder vertexBuffer = tessellator.getBuilder();
+        vertexBuffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
+        vertexBuffer.vertex(right, top, 0).endVertex();
+        vertexBuffer.vertex(left, top, 0).endVertex();
+        vertexBuffer.vertex(left, bottom, 0).endVertex();
+        vertexBuffer.vertex(right, bottom, 0).endVertex();
+        tessellator.end();
     }
 
     public static void drawRect(int x, int y, int width, int height, ReadableColor tl, ReadableColor tr, ReadableColor bl, ReadableColor br) {
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder vertexBuffer = tessellator.getBuffer();
-        vertexBuffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-        vertexBuffer.pos(x, y + height, 0).color(bl.getRed(), bl.getGreen(), bl.getBlue(), bl.getAlpha()).endVertex();
-        vertexBuffer.pos(x + width, y + height, 0).color(br.getRed(), br.getGreen(), br.getBlue(), br.getAlpha()).endVertex();
-        vertexBuffer.pos(x + width, y, 0).color(tr.getRed(), tr.getGreen(), tr.getBlue(), tr.getAlpha()).endVertex();
-        vertexBuffer.pos(x, y, 0).color(tl.getRed(), tl.getGreen(), tl.getBlue(), tl.getAlpha()).endVertex();
-        tessellator.draw();
+        Tesselator tessellator = Tesselator.getInstance();
+        BufferBuilder vertexBuffer = tessellator.getBuilder();
+        vertexBuffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        vertexBuffer.vertex(x, y + height, 0).color(bl.getRed(), bl.getGreen(), bl.getBlue(), bl.getAlpha()).endVertex();
+        vertexBuffer.vertex(x + width, y + height, 0).color(br.getRed(), br.getGreen(), br.getBlue(), br.getAlpha()).endVertex();
+        vertexBuffer.vertex(x + width, y, 0).color(tr.getRed(), tr.getGreen(), tr.getBlue(), tr.getAlpha()).endVertex();
+        vertexBuffer.vertex(x, y, 0).color(tl.getRed(), tl.getGreen(), tl.getBlue(), tl.getAlpha()).endVertex();
+        tessellator.end();
     }
 
-    public static FontRenderer getFontRenderer() {
-        return getMinecraft().fontRenderer;
+    public static Font getFont() {
+        return getMinecraft().font;
     }
 
     public static RenderGameOverlayEvent.ElementType getType(RenderGameOverlayEvent event) {
         return event.getType();
     }
 
-    public static int getMouseX(GuiScreenEvent.DrawScreenEvent.Post event) {
+    public static int getMouseX(ScreenEvent.DrawScreenEvent.Post event) {
         return event.getMouseX();
     }
 
-    public static int getMouseY(GuiScreenEvent.DrawScreenEvent.Post event) {
+    public static int getMouseY(ScreenEvent.DrawScreenEvent.Post event) {
         return event.getMouseY();
     }
 
     public static void setClipboardString(String text) {
-        getMinecraft().keyboardListener.setClipboardString(text);
+        getMinecraft().keyboardHandler.setClipboard(text);
     }
 
     public static String getClipboardString() {
-        return getMinecraft().keyboardListener.getClipboardString();
+        return getMinecraft().keyboardHandler.getClipboard();
     }
 
 
@@ -96,7 +97,7 @@ public class MCVer {
         public static final int KEY_X = GLFW.GLFW_KEY_X;
 
         public static void enableRepeatEvents(boolean enabled) {
-            getMinecraft().keyboardListener.enableRepeatEvents(enabled);
+            getMinecraft().keyboardHandler.setSendRepeatsToGui(enabled);
         }
     }
 }

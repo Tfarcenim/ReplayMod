@@ -24,13 +24,13 @@
  */
 package com.replaymod.gui.container;
 
-public class GuiOverlay extends com.replaymod.gui.container.AbstractGuiOverlay<GuiOverlay> {
+public class GuiOverlay extends com.replaymod.gui.container.GuiComponentOverlay<GuiOverlay> {
     @SuppressWarnings("unchecked")
-    public static com.replaymod.gui.container.AbstractGuiOverlay from(net.minecraft.client.gui.screen.Screen minecraft) {
-        if (!(minecraft instanceof com.replaymod.gui.container.AbstractGuiOverlay.UserInputGuiScreen)) {
+    public static com.replaymod.gui.container.GuiComponentOverlay from(net.minecraft.client.gui.screens.Screen minecraft) {
+        if (!(minecraft instanceof com.replaymod.gui.container.GuiComponentOverlay.UserInputGuiScreen)) {
             return null;
         }
-        return ((AbstractGuiOverlay.UserInputGuiScreen) minecraft).getOverlay();
+        return ((GuiComponentOverlay.UserInputGuiScreen) minecraft).getOverlay();
     }
 
     @Override

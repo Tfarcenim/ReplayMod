@@ -19,8 +19,8 @@ public class DisableFastRender extends EventRegistrations {
         if (!MCVer.hasOptifine()) return;
 
         try {
-            wasFastRender = (boolean) OptifineReflection.gameSettings_ofFastRender.get(mc.gameSettings);
-            OptifineReflection.gameSettings_ofFastRender.set(mc.gameSettings, false);
+            wasFastRender = (boolean) OptifineReflection.options_ofFastRender.get(mc.options);
+            OptifineReflection.options_ofFastRender.set(mc.options, false);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
@@ -34,7 +34,7 @@ public class DisableFastRender extends EventRegistrations {
         if (!MCVer.hasOptifine()) return;
 
         try {
-            OptifineReflection.gameSettings_ofFastRender.set(mc.gameSettings, wasFastRender);
+            OptifineReflection.options_ofFastRender.set(mc.options, wasFastRender);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }

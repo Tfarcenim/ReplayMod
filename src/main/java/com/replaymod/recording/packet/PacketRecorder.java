@@ -10,12 +10,12 @@ import com.replaymod.replaystudio.replay.ReplayFile;
 import com.replaymod.replaystudio.replay.ReplayMetaData;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import net.minecraft.network.IPacket;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.network.PacketDirection;
-import net.minecraft.network.ProtocolType;
-import net.minecraft.network.login.server.SCustomPayloadLoginPacket;
-import net.minecraft.network.play.server.SCustomPayloadPlayPacket;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.ConnectionProtocol;
+import net.minecraft.network.protocol.login.ClientboundCustomQueryPacket;
+import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,6 +28,7 @@ import static com.replaymod.replaystudio.util.Utils.writeInt;
 public class PacketRecorder {
     private static final Logger logger = LogManager.getLogger();
 
+    @SuppressWarnings("AlibabaThreadPoolCreation")
     private final ExecutorService saveService = Executors.newSingleThreadExecutor();
     private final ReplayOutputStream packetOutputStream;
 
@@ -37,7 +38,7 @@ public class PacketRecorder {
     private volatile boolean serverWasPaused;
 
     public PacketRecorder(ReplayFile replayFile, ReplayMetaData metaData) throws IOException {
-        this.packetOutputStream = replayFile.writePacketData();
+        this.packetOutputStream = (ReplayOutputStream) replayFile.write("packetRecorder.json");
         this.startTime = metaData.getDate();
     }
 
@@ -53,7 +54,7 @@ public class PacketRecorder {
         packetOutputStream.close();
     }
 
-    public void saveIntoReplayFile(IPacket packet) {
+    public void saveIntoReplayFile(Packet packet) {
         try {
             long now = System.currentTimeMillis();
             if (serverWasPaused) {
@@ -94,12 +95,12 @@ public class PacketRecorder {
         }
     }
 
-    private PacketData getPacketData(int timestamp, IPacket packet) throws Exception {
-        Integer packetId = ProtocolType.PLAY.getPacketId(PacketDirection.CLIENTBOUND, packet);
+    private PacketData getPacketData(int timestamp, Packet packet) throws Exception {
+        Integer packetId = ConnectionProtocol.PLAY.getPacketId(PacketFlow.CLIENTBOUND, packet);
         boolean loginPhase = false;
 
         if (packetId == null) {
-            packetId = ProtocolType.LOGIN.getPacketId(PacketDirection.CLIENTBOUND, packet);
+            packetId = ConnectionProtocol.LOGIN.getPacketId(PacketFlow.CLIENTBOUND, packet);
             loginPhase = true;
 
             if (packetId == null) {
@@ -108,14 +109,14 @@ public class PacketRecorder {
         }
 
         ByteBuf byteBuf = Unpooled.buffer(256, 1048576);
-        PacketBuffer buf = new PacketBuffer(byteBuf);
+        FriendlyByteBuf buf = new FriendlyByteBuf(byteBuf);
 
         try {
-            if (packet instanceof SCustomPayloadLoginPacket) {
-                ((SCustomPayloadLoginPacket) packet).getInternalData().resetReaderIndex();
+            if (packet instanceof ClientboundCustomQueryPacket) {
+                ((ClientboundCustomQueryPacket) packet).getInternalData().resetReaderIndex();
             }
 
-            packet.writePacketData(buf);
+            packet.write(buf);
             return new PacketData(timestamp, new com.replaymod.replaystudio.protocol.Packet(
                     MCVer.getPacketTypeRegistry(loginPhase),
                     packetId,
@@ -128,8 +129,8 @@ public class PacketRecorder {
         } finally {
             byteBuf.release();
 
-            if (packet instanceof SCustomPayloadPlayPacket) {
-                ((SCustomPayloadPlayPacket) packet).getBufferData().release();
+            if (packet instanceof ClientboundCustomPayloadPacket) {
+                ((ClientboundCustomPayloadPacket) packet).getData().release();
             }
         }
     }

@@ -26,7 +26,7 @@ package com.replaymod.gui.element;
 
 import com.replaymod.gui.container.GuiContainer;
 
-public class GuiHorizontalScrollbar extends AbstractGuiHorizontalScrollbar<GuiHorizontalScrollbar> {
+public class GuiHorizontalScrollbar extends GuiComponentHorizontalScrollbar<GuiHorizontalScrollbar> {
     public GuiHorizontalScrollbar() {
     }
 

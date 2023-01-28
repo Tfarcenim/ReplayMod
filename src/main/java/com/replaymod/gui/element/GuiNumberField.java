@@ -26,7 +26,7 @@ package com.replaymod.gui.element;
 
 import com.replaymod.gui.container.GuiContainer;
 
-public class GuiNumberField extends AbstractGuiNumberField<GuiNumberField> {
+public class GuiNumberField extends GuiComponentNumberField<GuiNumberField> {
     public GuiNumberField() {
     }
 

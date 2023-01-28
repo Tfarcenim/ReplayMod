@@ -5,7 +5,7 @@ showAsResourcePack=false
 license="GPLv3"
 [[mods]]
   modId="replaymod"
-  version="2.5.1"
+  version="2.5.1.1182.0"
   displayName="Replay Mod"
   updateJSONURL=""
   displayURL="https://replaymod.com"
@@ -24,6 +24,6 @@ license="GPLv3"
   [[dependencies.replaymod]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.16.4]"
+    versionRange="[1.18.2]"
     ordering="NONE"
     side="BOTH"

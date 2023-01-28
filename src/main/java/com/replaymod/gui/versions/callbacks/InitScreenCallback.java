@@ -1,8 +1,9 @@
 package com.replaymod.gui.versions.callbacks;
 
 import com.replaymod.gui.utils.Event;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.Widget;
+import net.minecraft.client.gui.components.Widget;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.AbstractWidget;
 
 import java.util.List;
 

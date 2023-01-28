@@ -1,14 +1,14 @@
 package com.replaymod.mixin;
 
 import com.replaymod.recording.handler.RecordingEventHandler;
-import net.minecraft.client.renderer.WorldRenderer;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.core.BlockPos;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(WorldRenderer.class)
+@Mixin(LevelRenderer.class)
 public abstract class MixinRenderGlobal implements RecordingEventHandler.RecordingEventSender {
 
     private RecordingEventHandler recordingEventHandler;
@@ -23,7 +23,7 @@ public abstract class MixinRenderGlobal implements RecordingEventHandler.Recordi
         return recordingEventHandler;
     }
 
-    @Inject(method = "sendBlockBreakProgress", at = @At("HEAD"))
+    @Inject(method = "destroyBlockProgress", at = @At("HEAD"))
     public void saveBlockBreakProgressPacket(int breakerId,
                                              BlockPos pos,
                                              int progress, CallbackInfo info) {

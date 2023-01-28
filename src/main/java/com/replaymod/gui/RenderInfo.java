@@ -25,8 +25,8 @@
 package com.replaymod.gui;
 
 import com.replaymod.gui.versions.MCVer;
-import net.minecraft.crash.CrashReport;
-import net.minecraft.crash.CrashReportCategory;
+import net.minecraft.CrashReport;
+import net.minecraft.CrashReportCategory;
 
 import java.util.Objects;
 
@@ -52,11 +52,11 @@ public class RenderInfo {
     }
 
     public void addTo(CrashReport crashReport) {
-        CrashReportCategory category = crashReport.makeCategory("Render info details");
-        com.replaymod.gui.versions.MCVer.addDetail(category, "Partial Tick", () -> "" + partialTick);
-        com.replaymod.gui.versions.MCVer.addDetail(category, "Mouse X", () -> "" + mouseX);
-        com.replaymod.gui.versions.MCVer.addDetail(category, "Mouse Y", () -> "" + mouseY);
-        MCVer.addDetail(category, "Layer", () -> "" + layer);
+        CrashReportCategory category = crashReport.addCategory("Render info details");
+        com.replaymod.gui.versions.MCVer.setDetail(category, "Partial Tick", () -> "" + partialTick);
+        com.replaymod.gui.versions.MCVer.setDetail(category, "Mouse X", () -> "" + mouseX);
+        com.replaymod.gui.versions.MCVer.setDetail(category, "Mouse Y", () -> "" + mouseY);
+        MCVer.setDetail(category, "Layer", () -> "" + layer);
     }
 
     public float getPartialTick() {

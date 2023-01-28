@@ -14,7 +14,9 @@ import java.util.Set;
 public class ReplayModMixinConfigPlugin implements IMixinConfigPlugin {
     static boolean hasClass(String name) throws IOException {
         InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(name.replace('.', '/') + ".class");
-        if (stream != null) stream.close();
+        if (stream != null) {
+            stream.close();
+        }
         return stream != null;
     }
 
@@ -29,10 +31,16 @@ public class ReplayModMixinConfigPlugin implements IMixinConfigPlugin {
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
         if (hasOF) {
             // OF renames the lambda method name and I see no way we can target it now, so we give up on that patch
-            if (mixinClassName.endsWith("MixinTileEntityEndPortalRenderer")) return false;
+            if (mixinClassName.endsWith("MixinBlockEntityEndPortalRenderer")) {
+                return false;
+            }
         }
-        if (mixinClassName.endsWith("_OF")) return hasOF;
-        if (mixinClassName.endsWith("_NoOF")) return !hasOF;
+        if (mixinClassName.endsWith("_OF")) {
+            return hasOF;
+        }
+        if (mixinClassName.endsWith("_NoOF")) {
+            return !hasOF;
+        }
         return true;
     }
 

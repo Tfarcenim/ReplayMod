@@ -1,8 +1,8 @@
 package com.replaymod.mixin;
 
-import net.minecraft.network.play.server.SSpawnPlayerPacket;
+import net.minecraft.network.protocol.game.ClientboundAddPlayerPacket;
 import org.spongepowered.asm.mixin.Mixin;
 
-@Mixin(SSpawnPlayerPacket.class)
+@Mixin(ClientboundAddPlayerPacket.class)
 public interface SPacketSpawnPlayerAccessor {
 }

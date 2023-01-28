@@ -17,9 +17,9 @@ import de.johni0702.minecraft.gui.utils.lwjgl.Dimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.client.renderer.texture.NativeImage;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.util.ResourceLocation;
+import com.mojang.blaze3d.platform.NativeImage;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.resources.ResourceLocation;
 
 import java.nio.ByteBuffer;
 
@@ -173,7 +173,9 @@ public class GuiVideoRenderer extends GuiScreen implements Tickable {
                 for (int i = 0; i < framesRendered; i++) {
                     renderTimes[currentIndex] = avgRenderTime;
                     currentIndex++;
-                    if (currentIndex >= renderTimes.length) currentIndex = 0;
+                    if (currentIndex >= renderTimes.length) {
+                        currentIndex = 0;
+                    }
                 }
 
                 //the renderTimes array initially contains lots of zeros,
@@ -201,8 +203,8 @@ public class GuiVideoRenderer extends GuiScreen implements Tickable {
             prevRenderedFrames = renderer.getFramesDone();
         }
 
-        renderTime.setText(I18n.format("replaymod.gui.rendering.timetaken") + ": " + secToString(renderTimeTaken / 1000));
-        remainingTime.setText(I18n.format("replaymod.gui.rendering.timeleft") + ": " + secToString(renderTimeLeft));
+        renderTime.setText(I18n.get("replaymod.gui.rendering.timetaken") + ": " + secToString(renderTimeTaken / 1000));
+        remainingTime.setText(I18n.get("replaymod.gui.rendering.timeleft") + ": " + secToString(renderTimeLeft));
 
         int framesDone = renderer.getFramesDone(), framesTotal = renderer.getTotalFrames();
         progressBar.setI18nLabel("replaymod.gui.rendering.progress", framesDone, framesTotal);
@@ -215,9 +217,13 @@ public class GuiVideoRenderer extends GuiScreen implements Tickable {
         int sec = seconds - ((min * 60) + (hours * 60 * 60));
 
         StringBuilder builder = new StringBuilder();
-        if (hours > 0) builder.append(hours).append(I18n.format("replaymod.gui.hours"));
-        if (min > 0 || hours > 0) builder.append(min).append(I18n.format("replaymod.gui.minutes"));
-        builder.append(sec).append(I18n.format("replaymod.gui.seconds"));
+        if (hours > 0) {
+            builder.append(hours).append(I18n.get("replaymod.gui.hours"));
+        }
+        if (min > 0 || hours > 0) {
+            builder.append(min).append(I18n.get("replaymod.gui.minutes"));
+        }
+        builder.append(sec).append(I18n.get("replaymod.gui.seconds"));
 
         return builder.toString();
     }
@@ -232,11 +238,11 @@ public class GuiVideoRenderer extends GuiScreen implements Tickable {
         }
 
         if (previewTextureDirty) {
-            previewTexture.updateDynamicTexture();
+            previewTexture.upload();
             previewTextureDirty = false;
         }
 
-        guiRenderer.bindTexture(previewTexture.getGlTextureId());
+        guiRenderer.bindTexture(previewTexture.getId());
         renderPreviewTexture(guiRenderer, size, videoWidth, videoHeight);
     }
 
@@ -261,7 +267,7 @@ public class GuiVideoRenderer extends GuiScreen implements Tickable {
         if (previewCheckbox.isChecked() && previewTexture != null) {
             buffer.mark();
             synchronized (this) {
-                NativeImage data = previewTexture.getTextureData();
+                NativeImage data = previewTexture.getPixels();
                 assert data != null;
                 // Note: Optifine changes the texture data array to be three times as long (for use by shaders),
                 //       we only want to initialize the first third and since we use our frame size, not the array size,

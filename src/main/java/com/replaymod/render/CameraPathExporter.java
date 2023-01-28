@@ -9,8 +9,8 @@ import de.javagl.jgltf.model.io.v2.GltfAssetWriterV2;
 import de.johni0702.minecraft.gui.utils.lwjgl.vector.Quaternion;
 import de.johni0702.minecraft.gui.utils.lwjgl.vector.Vector4f;
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.vector.Vector3d;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 import org.apache.commons.io.FilenameUtils;
 import org.lwjgl.opengl.GL11;
 
@@ -42,15 +42,15 @@ public class CameraPathExporter {
     }
 
     public void recordFrame(float tickDelta) {
-        Entity entity = mc.getRenderViewEntity() == null ? mc.player : mc.getRenderViewEntity();
+        Entity entity = mc.getCameraEntity() == null ? mc.player : mc.getCameraEntity();
 
-        net.minecraft.client.renderer.ActiveRenderInfo camera = mc.gameRenderer.getActiveRenderInfo();
-        Vector3d vec = camera.getProjectedView();
-        float x = (float) vec.getX();
-        float y = (float) vec.getY();
-        float z = (float) vec.getZ();
-        float yaw = camera.getYaw() + 180;
-        float pitch = camera.getPitch();
+        net.minecraft.client.Camera camera = mc.gameRenderer.getMainCamera();
+        Vec3 vec = camera.getPosition();
+        float x = (float) vec.x();
+        float y = (float) vec.y();
+        float z = (float) vec.z();
+        float yaw = camera.getXRot() + 180;
+        float pitch = camera.getYRot();
         float roll = entity instanceof CameraEntity ? ((CameraEntity) entity).roll : 0;
 
         Quaternion quatYaw = new Quaternion();
@@ -134,9 +134,9 @@ public class CameraPathExporter {
             camera.setPerspective(configure(new CameraPerspective(), perspective -> {
                 float aspectRatio = (float) settings.getVideoWidth() / (float) settings.getVideoHeight();
                 perspective.setAspectRatio(aspectRatio);
-                perspective.setYfov((float) Math.toRadians(mc.gameSettings.fov));
+                perspective.setYfov((float) Math.toRadians(mc.options.fov));
                 perspective.setZnear(0.05f);
-                perspective.setZfar((float) mc.gameSettings.renderDistanceChunks * 16 * 4);
+                perspective.setZfar((float) mc.options.renderDistance * 16 * 4);
             }));
         }));
         glTF.addNodes(configure(new Node(), node -> node.setCamera(0)));

@@ -2,25 +2,24 @@ package com.replaymod.core.versions;
 
 import com.replaymod.core.MinecraftMethodAccessor;
 import com.replaymod.mixin.GuiScreenAccessor;
-import com.replaymod.mixin.MainWindowAccessor;
 import com.replaymod.mixin.ParticleAccessor;
 import com.replaymod.replaystudio.protocol.PacketTypeRegistry;
 import com.replaymod.replaystudio.us.myles.ViaVersion.api.protocol.ProtocolVersion;
 import com.replaymod.replaystudio.us.myles.ViaVersion.packets.State;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.Widget;
-import net.minecraft.client.gui.widget.button.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.particle.Particle;
-import net.minecraft.client.renderer.vertex.VertexFormat;
-import net.minecraft.client.renderer.vertex.VertexFormatElement;
-import net.minecraft.client.shader.Framebuffer;
-import net.minecraft.client.util.InputMappings;
-import net.minecraft.resources.IPackNameDecorator;
-import net.minecraft.util.SharedConstants;
-import net.minecraft.util.Util;
-import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.text.TranslationTextComponent;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormatElement;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.server.packs.repository.PackSource;
+import net.minecraft.SharedConstants;
+import net.minecraft.Util;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.network.chat.TranslatableComponent;
 import org.lwjgl.glfw.GLFW;
 
 import java.io.File;
@@ -35,7 +34,7 @@ import java.util.function.Consumer;
  */
 public class MCVer {
     public static int getProtocolVersion() {
-        return SharedConstants.getVersion().getProtocolVersion();
+        return SharedConstants.getProtocolVersion();
     }
 
     public static PacketTypeRegistry getPacketTypeRegistry(boolean loginPhase) {
@@ -45,24 +44,24 @@ public class MCVer {
         );
     }
 
-    public static void resizeMainWindow(Minecraft mc, int width, int height) {
-        Framebuffer fb = mc.getFramebuffer();
-        if (fb.framebufferWidth != width || fb.framebufferHeight != height) {
+    public static void resizeWindow(Minecraft mc, int width, int height) {
+        RenderTarget fb = mc.getMainRenderTarget();
+        if (fb.width != width || fb.height != height) {
             fb.resize(width, height, false);
         }
         //noinspection ConstantConditions
-        MainWindowAccessor mainWindow = (MainWindowAccessor) (Object) mc.getMainWindow();
-        mainWindow.setFramebufferWidth(width);
-        mainWindow.setFramebufferHeight(height);
-        mc.gameRenderer.updateShaderGroupSize(width, height);
+        var target = mc.getMainRenderTarget();
+        target.width = width;
+        target.height = height;
+        mc.gameRenderer.resize(width, height);
     }
 
 
     public static CompletableFuture<?>
     setServerResourcePack(File file) {
-        return getMinecraft().getPackFinder().setServerPack(
+        return getMinecraft().getClientPackSource().setServerPack(
                 file
-                , IPackNameDecorator.SERVER
+                , PackSource.SERVER
         );
     }
 
@@ -96,44 +95,44 @@ public class MCVer {
         acc.getChildren().add(button);
     }
 
-    public static Optional<Widget> findButton(List<Widget> buttonList, @SuppressWarnings("unused") String text, @SuppressWarnings("unused") int id) {
-        final TranslationTextComponent message = new TranslationTextComponent(text);
-        for (Widget b : buttonList) {
+    public static Optional<AbstractWidget> findButton(List<AbstractWidget> buttonList, @SuppressWarnings("unused") String text, @SuppressWarnings("unused") int id) {
+        final TranslatableComponent message = new TranslatableComponent(text);
+        for (AbstractWidget b : buttonList) {
             if (message.equals(b.getMessage())) {
                 return Optional.of(b);
             }
             // Fuzzy match (copy does not include children)
-            if (b.getMessage() != null && b.getMessage().copyRaw().equals(message)) {
+            if (b.getMessage() != null && b.getMessage().plainCopy().equals(message)) {
                 return Optional.of(b);
             }
         }
         return Optional.empty();
     }
 
-    public static void processKeyBinds() {
+    public static void handleKeybinds() {
         ((MinecraftMethodAccessor) getMinecraft()).replayModProcessKeyBinds();
     }
 
 
     public static long milliTime() {
-        return Util.milliTime();
+        return Util.getMillis();
     }
 
     // TODO: this can be inlined once https://github.com/SpongePowered/Mixin/issues/305 is fixed
-    public static Vector3d getPosition(Particle particle, float partialTicks) {
+    public static Vec3 getPosition(Particle particle, float partialTicks) {
         ParticleAccessor acc = (ParticleAccessor) particle;
         double x = acc.getPrevPosX() + (acc.getPosX() - acc.getPrevPosX()) * partialTicks;
         double y = acc.getPrevPosY() + (acc.getPosY() - acc.getPrevPosY()) * partialTicks;
         double z = acc.getPrevPosZ() + (acc.getPosZ() - acc.getPrevPosZ()) * partialTicks;
-        return new Vector3d(x, y, z);
+        return new Vec3(x, y, z);
     }
 
     public static void openFile(File file) {
-        Util.getOSType().openFile(file);
+        Util.getPlatform().openFile(file);
     }
 
     public static void openURL(URI url) {
-        Util.getOSType().openURI(url);
+        Util.getPlatform().openUri(url);
     }
 
 
@@ -198,8 +197,8 @@ public class MCVer {
             return Screen.hasControlDown();
         }
 
-        public static boolean isKeyDown(int keyCode) {
-            return InputMappings.isKeyDown(getMinecraft().getMainWindow().getHandle(), keyCode);
+        public static boolean isDown(int keyCode) {
+            return InputConstants.isKeyDown(getMinecraft().getWindow().getWindow(), keyCode);
         }
 
     }

@@ -9,14 +9,14 @@ import com.replaymod.gui.function.Typeable;
 import com.replaymod.gui.layout.GridLayout;
 import com.replaymod.gui.layout.HorizontalLayout;
 import com.replaymod.gui.layout.VerticalLayout;
-import com.replaymod.gui.popup.AbstractGuiPopup;
+import com.replaymod.gui.popup.GuiComponentPopup;
 import com.replaymod.gui.utils.Colors;
 import com.replaymod.replaystudio.data.Marker;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;
 
 import java.util.function.Consumer;
 
-public class GuiEditMarkerPopup extends AbstractGuiPopup<GuiEditMarkerPopup> implements Typeable {
+public class GuiEditMarkerPopup extends GuiComponentPopup<GuiEditMarkerPopup> implements Typeable {
     private static com.replaymod.gui.element.GuiNumberField newGuiNumberField() {
         return new com.replaymod.gui.element.GuiNumberField().setSize(150, 20).setValidateOnFocusChange(true);
     }

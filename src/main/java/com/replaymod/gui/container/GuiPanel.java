@@ -31,7 +31,7 @@ import com.replaymod.gui.layout.LayoutData;
 import java.util.ArrayList;
 import java.util.Map;
 
-public class GuiPanel extends AbstractGuiContainer<GuiPanel> {
+public class GuiPanel extends GuiComponentContainer<GuiPanel> {
 
     public GuiPanel() {
     }

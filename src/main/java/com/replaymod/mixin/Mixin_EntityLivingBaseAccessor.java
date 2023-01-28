@@ -1,29 +1,29 @@
 package com.replaymod.mixin;
 
-import net.minecraft.entity.LivingEntity;
+import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(LivingEntity.class)
 public interface Mixin_EntityLivingBaseAccessor {
-    @Accessor
+    @Accessor("lerpX")
     double getInterpTargetX();
 
-    @Accessor
+    @Accessor("lerpY")
     double getInterpTargetY();
 
-    @Accessor
+    @Accessor("lerpZ")
     double getInterpTargetZ();
 
-    @Accessor
+    @Accessor("lerpYRot")
     double getInterpTargetYaw();
 
-    @Accessor
+    @Accessor("lerpXRot")
     double getInterpTargetPitch();
 
-    @Accessor
+    @Accessor("useItemRemaining")
     int getActiveItemStackUseCount();
 
-    @Accessor
+    @Accessor("useItemRemaining")
     void setActiveItemStackUseCount(int value);
 }

@@ -13,15 +13,15 @@ import com.replaymod.replay.ReplayModReplay;
 import com.replaymod.replay.events.ReplayOpenedCallback;
 import com.replaymod.replay.gui.overlay.GuiReplayOverlay;
 import net.minecraft.client.Minecraft;
-import net.minecraft.potion.EffectInstance;
-import net.minecraft.potion.Effects;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 
 public class FullBrightness extends EventRegistrations implements Extra {
     private ReplayMod core;
     private ReplayModReplay module;
     private IGuiImage indicator;
 
-    private Minecraft mc;
+    private Minecraft minecraft;
     private boolean active;
     private double originalGamma;
 
@@ -30,9 +30,9 @@ public class FullBrightness extends EventRegistrations implements Extra {
         this.core = mod;
         this.module = ReplayModReplay.instance;
         this.indicator = new GuiImage().setTexture(ReplayMod.TEXTURE, 90, 20, 19, 16).setSize(19, 16);
-        this.mc = mod.getMinecraft();
+        this.minecraft = mod.getMinecraft();
 
-        mod.getKeyBindingRegistry().registerKeyBinding("replaymod.input.lighting", Keyboard.KEY_Z, new Runnable() {
+        mod.getKeyMappingRegistry().registerKeyMapping("replaymod.input.lighting", Keyboard.KEY_Z, new Runnable() {
             @Override
             public void run() {
                 active = !active;
@@ -66,12 +66,12 @@ public class FullBrightness extends EventRegistrations implements Extra {
         if (active && module.getReplayHandler() != null) {
             Type type = getType();
             if (type == Type.Gamma || type == Type.Both) {
-                originalGamma = mc.gameSettings.gamma;
-                mc.gameSettings.gamma = 1000;
+                originalGamma = minecraft.options.gamma;
+                minecraft.options.gamma = 1000;
             }
             if (type == Type.NightVision || type == Type.Both) {
-                if (mc.player != null) {
-                    mc.player.addPotionEffect(new EffectInstance(Effects.NIGHT_VISION
+                if (minecraft.player != null) {
+                    minecraft.player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION
                             , Integer.MAX_VALUE));
                 }
             }
@@ -86,11 +86,11 @@ public class FullBrightness extends EventRegistrations implements Extra {
         if (active && module.getReplayHandler() != null) {
             Type type = getType();
             if (type == Type.Gamma || type == Type.Both) {
-                mc.gameSettings.gamma = originalGamma;
+                minecraft.options.gamma = originalGamma;
             }
             if (type == Type.NightVision || type == Type.Both) {
-                if (mc.player != null) {
-                    mc.player.removePotionEffect(Effects.NIGHT_VISION
+                if (minecraft.player != null) {
+                    minecraft.player.removeEffect(MobEffects.NIGHT_VISION
                     );
                 }
             }
