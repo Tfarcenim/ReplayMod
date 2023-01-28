@@ -11,7 +11,7 @@ import com.google.api.client.googleapis.media.MediaHttpUploader;
 import com.google.api.client.http.InputStreamContent;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.DataStoreFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.youtube.YouTube;
@@ -42,7 +42,7 @@ public class YoutubeUploader {
     private static final String CLIENT_ID = "743126594724-mfe7pj1k7e47uu5pk4503c8st9vj9ibu.apps.googleusercontent.com";
     private static final String CLIENT_SECRET = "gMwcy3mRYCRamCIjJIYP7rqc";
     private static final String FFMPEG_MP4 = "-i %s -c:v libx264 -preset slow -crf 16 %s";
-    private static final JsonFactory JSON_FACTORY = new GsonFactory();
+    private static final JsonFactory JSON_FACTORY = new JacksonFactory();
     private final NetHttpTransport httpTransport;
     private final DataStoreFactory dataStoreFactory;
     private final File videoFile;

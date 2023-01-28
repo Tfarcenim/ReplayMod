@@ -14,7 +14,7 @@ import com.replaymod.mixin.TimerAccessor;
 import com.replaymod.replay.ReplayModReplay;
 import com.replaymod.replay.ReplaySender;
 import com.replaymod.replaystudio.replay.ReplayFile;
-import com.replaymod.replaystudio.util.RandomAccessReplay;
+import com.replaymod.replaystudio.rar.RandomAccessReplay;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
@@ -56,7 +56,7 @@ public class QuickReplaySender extends ChannelHandlerAdapter implements ReplaySe
     private final Minecraft mc = getMinecraft();
 
     private final ReplayModReplay mod;
-    private final RandomAccessReplay<Packet<?>> replay;
+    private final RandomAccessReplay replay;
     private final EventHandler eventHandler = new EventHandler();
     private ChannelHandlerContext ctx;
 
@@ -77,10 +77,10 @@ public class QuickReplaySender extends ChannelHandlerAdapter implements ReplaySe
 
     public QuickReplaySender(ReplayModReplay mod, ReplayFile replayFile) {
         this.mod = mod;
-        this.replay = new RandomAccessReplay<Packet<?>>(replayFile, getPacketTypeRegistry(false)) {
+        this.replay = new RandomAccessReplay(replayFile, getPacketTypeRegistry(false)) {
             private byte[] buf = new byte[0];
 
-            @Override
+            /*@Override
             protected Packet<?> decode(com.github.steveice10.netty.buffer.ByteBuf byteBuf) throws IOException {
                 int packetId = new ByteBufNetInput(byteBuf).readVarInt();
                 int size = byteBuf.readableBytes();
@@ -91,10 +91,10 @@ public class QuickReplaySender extends ChannelHandlerAdapter implements ReplaySe
                 ByteBuf wrappedBuf = Unpooled.wrappedBuffer(buf);
                 wrappedBuf.writerIndex(size);
                 return ConnectionProtocol.PLAY.createPacket(PacketFlow.CLIENTBOUND, packetId, new FriendlyByteBuf(wrappedBuf));
-            }
+            }*/
 
             @Override
-            protected void dispatch(Packet<?> packet) {
+            protected void dispatch(com.replaymod.replaystudio.protocol.Packet packet) {
                 ctx.fireChannelRead(packet);
             }
         };

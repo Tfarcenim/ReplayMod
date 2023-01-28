@@ -1,6 +1,6 @@
 package com.replaymod.extras.playeroverview;
 
-import com.google.common.base.Optional;
+import com.replaymod.replaystudio.lib.guava.base.Optional;
 import com.replaymod.core.ReplayMod;
 import com.replaymod.core.events.PreRenderHandCallback;
 import com.replaymod.core.utils.Utils;

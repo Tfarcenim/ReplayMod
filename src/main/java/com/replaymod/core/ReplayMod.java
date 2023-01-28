@@ -17,7 +17,7 @@ import com.replaymod.replay.ReplayModReplay;
 import com.replaymod.replaystudio.replay.ReplayFile;
 import com.replaymod.replaystudio.replay.ZipReplayFile;
 import com.replaymod.replaystudio.studio.ReplayStudio;
-import com.replaymod.replaystudio.us.myles.ViaVersion.api.protocol.ProtocolVersion;
+import com.replaymod.replaystudio.lib.viaversion.api.protocol.version.ProtocolVersion;
 import com.replaymod.replaystudio.util.I18n;
 import com.replaymod.simplepathing.ReplayModSimplePathing;
 import net.minecraft.ChatFormatting;

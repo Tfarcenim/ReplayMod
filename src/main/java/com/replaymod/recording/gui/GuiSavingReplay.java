@@ -16,7 +16,7 @@ import com.replaymod.gui.utils.Colors;
 import com.replaymod.recording.Setting;
 import com.replaymod.replay.gui.screen.GuiReplayViewer;
 import com.replaymod.replaystudio.replay.ReplayMetaData;
-import com.replaymod.replaystudio.us.myles.ViaVersion.api.Pair;
+import com.replaymod.replaystudio.lib.viaversion.util.Pair;
 import de.johni0702.minecraft.gui.utils.lwjgl.Dimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
 import net.minecraft.client.Minecraft;

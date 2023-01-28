@@ -14,7 +14,7 @@ import com.replaymod.recording.handler.ConnectionEventHandler;
 import com.replaymod.replaystudio.data.Marker;
 import com.replaymod.replaystudio.replay.ReplayFile;
 import com.replaymod.replaystudio.replay.ReplayMetaData;
-import com.replaymod.replaystudio.us.myles.ViaVersion.api.Pair;
+import com.replaymod.replaystudio.lib.viaversion.util.Pair;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;

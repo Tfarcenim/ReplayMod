@@ -146,6 +146,9 @@ repositories {
             includeGroupByRegex 'com\\.github\\..*'
         }
     }
+    maven {
+        url 'https://repo.viaversion.com'
+    }
 }
 
 configurations {
@@ -180,28 +183,32 @@ dependencies {
     annotationProcessor 'org.apache.logging.log4j:log4j-core:2.0-beta9'
 
     for (suffix in ['', ':natives-linux', ':natives-windows', ':natives-macos']) {
-        shadow('org.lwjgl:lwjgl-tinyexr:3.2.2' + suffix) {
+        minecraftLibrary('org.lwjgl:lwjgl-tinyexr:3.2.2' + suffix) {
             exclude group: 'org.lwjgl', module: 'lwjgl' // comes with MC
         }
     }
 
-    shadow 'com.googlecode.mp4parser:isoparser:1.1.7'
-    shadow 'org.apache.commons:commons-exec:1.3'
-    shadow 'com.google.apis:google-api-services-youtube:v3-rev178-1.22.0', shadeExclusions
-    shadow 'com.google.api-client:google-api-client-gson:1.20.0', shadeExclusions
-    shadow 'com.google.api-client:google-api-client-java6:1.20.0', shadeExclusions
-    shadow 'com.google.oauth-client:google-oauth-client-jetty:1.20.0'
-    shadow 'com.github.javagl.JglTF:jgltf-model:3af6de4'
-    shadow 'org.aspectj:aspectjrt:1.8.2'
-    shadow 'com.github.ReplayMod.JavaBlend:2.79.0:a0696f8'
-    shadow "com.github.ReplayMod:ReplayStudio:a1f82a7"
-    shadow 'com.github.ReplayMod:lwjgl-utils:27dcd66'
+    minecraftLibrary 'com.googlecode.mp4parser:isoparser:1.1.7',{
+        jarJar.pin(it,'1.1.7')
+    }
+    minecraftLibrary 'org.apache.commons:commons-exec:1.3'
+    minecraftLibrary 'com.google.apis:google-api-services-youtube:v3-rev178-1.22.0', shadeExclusions
+    //minecraftLibrary 'com.google.api-client:google-api-client-gson:1.20.0'
+    minecraftLibrary 'com.google.api-client:google-api-client-java6:1.20.0', shadeExclusions
+    minecraftLibrary 'com.google.oauth-client:google-oauth-client-jetty:1.20.0'
+    minecraftLibrary 'com.github.javagl.JglTF:jgltf-model:3af6de4'
+    minecraftLibrary 'org.aspectj:aspectjrt:1.8.2'
+    minecraftLibrary 'com.github.ReplayMod.JavaBlend:2.79.0:a0696f8'
+    minecraftLibrary ("com.github.ReplayMod:ReplayStudio:21ef505")
+    minecraftLibrary 'com.github.ReplayMod:lwjgl-utils:27dcd66'
+
 
     // implementation(jGui){ transitive = false } // FG 1.2 puts all MC deps into the compile configuration and we don't want to shade those
     //testCompile 'junit:junit:4.11'
+    minecraftLibrary 'com.github.viaversion:opennbt:0a02214'
 }
 
-File configureRelocationOutput = new File(project.buildDir, 'configureRelocation')
+/*File configureRelocationOutput = new File(project.buildDir, 'configureRelocation')
 task configureRelocation() {
     dependsOn tasks.jar
     dependsOn configurations.shadow
@@ -257,17 +264,17 @@ task configureRelocation() {
         }.flatten().unique()
         configureRelocationOutput.write(pkgs.join('\n'))
     }
-}
+}*/
 
 // tasks.removeByName('shadowJar') // we want to base our shadowed jar on the reobfJar output, not the sourceSet output
-tasks.whenTaskAdded { task ->
+/*tasks.whenTaskAdded { task ->
     if(task.name.contains('shadowJar')) {
         System.out.println(task + "is disabled")
         task.enabled = false
     }
-}
+}*/
 
-task jarCustom(type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+/*task jarCustom(type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
     classifier 'shadow'
     from { new File(project.buildDir, 'reobfJar/output.jar') }
 
@@ -300,7 +307,7 @@ task jarCustom(type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar)
         }
     }
 }
-tasks.assemble.dependsOn tasks.jarCustom
+tasks.assemble.dependsOn tasks.jarCustom*/
 
 jar {
     classifier = 'raw'
