@@ -1,6 +1,6 @@
 package com.replaymod.recording.packet;
 
-import com.github.steveice10.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
 import com.github.steveice10.packetlib.tcp.io.ByteBufNetOutput;
 import com.replaymod.core.ReplayMod;
 import com.replaymod.core.versions.MCVer;
@@ -68,8 +68,8 @@ public class PacketRecorder {
                 try {
                     if (ReplayMod.isMinimalMode()) {
                         // Minimal mode, ReplayStudio might not know our packet ids, so we cannot use it
-                        com.github.steveice10.netty.buffer.ByteBuf packetIdBuf = PooledByteBufAllocator.DEFAULT.buffer();
-                        com.github.steveice10.netty.buffer.ByteBuf packetBuf = packetData.getPacket().getBuf();
+                        io.netty.buffer.ByteBuf packetIdBuf = PooledByteBufAllocator.DEFAULT.buffer();
+                        io.netty.buffer.ByteBuf packetBuf = packetData.getPacket().getBuf();
                         try {
                             new ByteBufNetOutput(packetIdBuf).writeVarInt(packetData.getPacket().getId());
 
@@ -120,7 +120,7 @@ public class PacketRecorder {
             return new PacketData(timestamp, new com.replaymod.replaystudio.protocol.Packet(
                     MCVer.getPacketTypeRegistry(loginPhase),
                     packetId,
-                    com.github.steveice10.netty.buffer.Unpooled.wrappedBuffer(
+                    io.netty.buffer.Unpooled.wrappedBuffer(
                             buf.array(),
                             buf.arrayOffset(),
                             buf.readableBytes()

@@ -12,7 +12,7 @@ import com.replaymod.replaystudio.protocol.PacketTypeRegistry;
 import com.replaymod.replaystudio.replay.ReplayFile;
 import com.replaymod.replaystudio.replay.ReplayMetaData;
 import com.replaymod.replaystudio.stream.IteratorStream;
-import com.replaymod.replaystudio.lib.viaversion.util.Pair;
+import com.viaversion.viaversion.util.Pair;
 import com.replaymod.replaystudio.util.Utils;
 import org.apache.commons.io.FilenameUtils;
 

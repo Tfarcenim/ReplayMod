@@ -31,7 +31,7 @@ import com.replaymod.replay.ReplayModReplay;
 import com.replaymod.replay.Setting;
 import com.replaymod.replaystudio.replay.ReplayFile;
 import com.replaymod.replaystudio.replay.ReplayMetaData;
-import com.replaymod.replaystudio.lib.viaversion.util.Pair;
+import com.viaversion.viaversion.util.Pair;
 import de.johni0702.minecraft.gui.utils.lwjgl.Dimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;

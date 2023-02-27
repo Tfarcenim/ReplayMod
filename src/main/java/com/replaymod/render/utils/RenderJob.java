@@ -1,6 +1,6 @@
 package com.replaymod.render.utils;
 
-import com.replaymod.replaystudio.lib.guava.base.Optional;
+import com.google.common.base.Optional;
 import com.google.gson.GsonBuilder;
 import com.google.gson.TypeAdapter;
 import com.google.gson.reflect.TypeToken;

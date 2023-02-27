@@ -21,7 +21,7 @@ import com.replaymod.gui.popup.GuiInfoPopup;
 import com.replaymod.gui.utils.Colors;
 import com.replaymod.gui.versions.Image;
 import com.replaymod.gui.versions.MCVer;
-import com.replaymod.replaystudio.lib.viaversion.api.protocol.version.ProtocolVersion;
+import com.viaversion.viaversion.api.protocol.version.ProtocolVersion;
 import de.johni0702.minecraft.gui.utils.lwjgl.Dimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
 import net.minecraft.client.gui.screens.Screen;

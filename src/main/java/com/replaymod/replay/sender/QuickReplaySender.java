@@ -72,7 +72,7 @@ public class QuickReplaySender extends ChannelHandlerAdapter implements ReplaySe
 
     private ListenableFuture<Void> initPromise;
 
-    private com.github.steveice10.netty.buffer.ByteBuf buf;
+    private io.netty.buffer.ByteBuf buf;
     private NetInput bufInput;
 
     public QuickReplaySender(ReplayModReplay mod, ReplayFile replayFile) {
@@ -81,7 +81,7 @@ public class QuickReplaySender extends ChannelHandlerAdapter implements ReplaySe
             private byte[] buf = new byte[0];
 
             /*@Override
-            protected Packet<?> decode(com.github.steveice10.netty.buffer.ByteBuf byteBuf) throws IOException {
+            protected Packet<?> decode(io.netty.buffer.ByteBuf byteBuf) throws IOException {
                 int packetId = new ByteBufNetInput(byteBuf).readVarInt();
                 int size = byteBuf.readableBytes();
                 if (buf.length < size) {

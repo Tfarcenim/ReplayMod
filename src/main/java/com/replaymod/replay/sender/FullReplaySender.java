@@ -978,7 +978,7 @@ public class FullReplaySender extends ChannelDuplexHandler implements ReplaySend
     }
 
     private static final class PacketData {
-        private static final com.github.steveice10.netty.buffer.ByteBuf byteBuf = com.github.steveice10.netty.buffer.Unpooled.buffer();
+        private static final io.netty.buffer.ByteBuf byteBuf = io.netty.buffer.Unpooled.buffer();
         private static final NetOutput netOutput = new ByteBufNetOutput(byteBuf);
 
         private final int timestamp;

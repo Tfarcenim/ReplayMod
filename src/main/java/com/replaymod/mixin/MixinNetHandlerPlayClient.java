@@ -68,7 +68,7 @@ public abstract class MixinNetHandlerPlayClient {
 
                 for (PacketPlayerListEntry data : PacketPlayerListEntry.read(new Packet(
                         MCVer.getPacketTypeRegistry(false), 0, PacketType.PlayerListEntry,
-                        com.github.steveice10.netty.buffer.Unpooled.wrappedBuffer(array)
+                        io.netty.buffer.Unpooled.wrappedBuffer(array)
                 ))) {
                     if (data.getUuid() == null) {
                         continue;
