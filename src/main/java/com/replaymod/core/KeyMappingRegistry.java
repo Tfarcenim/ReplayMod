@@ -2,6 +2,7 @@ package com.replaymod.core;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import com.mojang.logging.LogUtils;
 import com.replaymod.core.events.KeyMappingEventCallback;
 import com.replaymod.core.events.KeyEventCallback;
 import com.replaymod.core.events.PreRenderCallback;

@@ -25,6 +25,7 @@
 package com.replaymod.gui.element;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.logging.LogUtils;
 import com.replaymod.gui.GuiRenderer;
 import com.replaymod.gui.RenderInfo;
 import com.replaymod.gui.container.GuiContainer;

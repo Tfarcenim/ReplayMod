@@ -26,7 +26,7 @@ apply plugin: 'org.parchmentmc.librarian.forgegradle'
 apply plugin: 'org.spongepowered.mixin'
 
 group = "com.replaymod"
-version = project.name + '-' + rootProject.version + '-1182'
+version = rootProject.version + '-1182.0'
 
 java {
     archivesBaseName = 'replaymod'
@@ -152,9 +152,11 @@ dependencies {
 
     minecraftLibrary 'com.googlecode.mp4parser:isoparser:1.1.7'
     minecraftLibrary 'org.apache.commons:commons-exec:1.3'
-    minecraftLibrary 'com.google.apis:google-api-services-youtube:v3-rev178-1.22.0'
+
+    minecraftLibrary 'com.google.apis:google-api-services-youtube:v3-rev222-1.25.0'
     //minecraftLibrary 'com.google.api-client:google-api-client-gson:1.20.0'
-    minecraftLibrary 'com.google.api-client:google-api-client-java6:1.20.0'
+    minecraftLibrary 'com.google.api-client:google-api-client-java6:2.1.4'
+
     minecraftLibrary 'com.google.oauth-client:google-oauth-client-jetty:1.20.0'
     minecraftLibrary 'com.github.javagl.JglTF:jgltf-model:3af6de4'
     minecraftLibrary 'org.aspectj:aspectjrt:1.8.2'
@@ -166,7 +168,7 @@ dependencies {
 
     minecraftLibrary 'blank:ReplayStudio:21ef505'
 
-    minecraftLibrary 'org.lwjgl:lwjgl-tinyexr:3.3.1'
+    minecraftLibrary 'org.lwjgl:lwjgl-tinyexr:3.2.2'
     minecraftLibrary 'com.github.steveice10:packetlib:2.1'
     minecraftLibrary 'com.github.replaymod.viaversion:viaversion-common:5c55fc0'
     minecraftLibrary 'io.netty:netty-all:4.1.89.Final'

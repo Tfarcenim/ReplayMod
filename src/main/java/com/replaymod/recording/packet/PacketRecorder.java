@@ -38,7 +38,8 @@ public class PacketRecorder {
     private volatile boolean serverWasPaused;
 
     public PacketRecorder(ReplayFile replayFile, ReplayMetaData metaData) throws IOException {
-        this.packetOutputStream = (ReplayOutputStream) replayFile.write("packetRecorder.json");
+        //this.packetOutputStream = (ReplayOutputStream) replayFile.write("packetRecorder.json");
+        this.packetOutputStream = replayFile.writePacketData();
         this.startTime = metaData.getDate();
     }
 

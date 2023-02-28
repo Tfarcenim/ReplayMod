@@ -46,7 +46,8 @@ public class GuiRecordingOverlay extends EventRegistrations {
             fontRenderer.draw(
                     stack,
                     text.toUpperCase(), 30, 18 - (fontRenderer.lineHeight / 2), 0xffffffff);
-            minecraft.getTextureManager().bindForSetup(TEXTURE);
+            //minecraft.getTextureManager().bindForSetup(TEXTURE);
+            RenderSystem.setShaderTexture(0, TEXTURE);
             RenderSystem.enableDepthTest();
             GuiRenderer renderer = new MinecraftGuiRenderer(stack);
             renderer.drawTexturedRect(10, 10, 58, 20, 16, 16, 16, 16, TEXTURE_SIZE, TEXTURE_SIZE);

@@ -24,6 +24,7 @@
  */
 package com.replaymod.gui;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.replaymod.gui.utils.NonNull;
@@ -96,12 +97,14 @@ public class MinecraftGuiRenderer implements GuiRenderer {
 
     @Override
     public void bindTexture(ResourceLocation location) {
-        com.replaymod.gui.versions.MCVer.getMinecraft().getTextureManager().bindForSetup(location);
+        //com.replaymod.gui.versions.MCVer.getMinecraft().getTextureManager().bindForSetup(location);
+        RenderSystem.setShaderTexture(0, location);
     }
 
     @Override
     public void bindTexture(int glId) {
-        GlStateManager._bindTexture(glId);
+        //GlStateManager._bindTexture(glId);
+        RenderSystem.setShaderTexture(0, glId);
     }
 
     @Override

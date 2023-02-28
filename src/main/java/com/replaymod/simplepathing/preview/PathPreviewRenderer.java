@@ -252,8 +252,8 @@ public class PathPreviewRenderer extends EventRegistrations {
                            Triple<Double, Double, Double> pos,
                            Keyframe keyframe) {
 
-        mc.getTextureManager().bindForSetup(TEXTURE);
-
+        //mc.getTextureManager().bindForSetup(TEXTURE);
+        RenderSystem.setShaderTexture(0, TEXTURE);
         float posX = 80f / ReplayMod.TEXTURE_SIZE;
         float posY = 0f;
         float size = 10f / ReplayMod.TEXTURE_SIZE;
@@ -300,8 +300,8 @@ public class PathPreviewRenderer extends EventRegistrations {
                             Triple<Double, Double, Double> pos,
                             Triple<Float, Float, Float> rot) {
 
-        mc.getTextureManager().bindForSetup(CAMERA_HEAD);
-
+        //mc.getTextureManager().bindForSetup(CAMERA_HEAD);
+        RenderSystem.setShaderTexture(0, CAMERA_HEAD);
         GL11.glPushMatrix();
 
         GL11.glTranslated(

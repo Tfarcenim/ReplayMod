@@ -119,7 +119,8 @@ public class RestoreReplayGui extends GuiComponentScreen<RestoreReplayGui> {
             // Try to restore replay duration
             // We need to re-write the packet data in case there are any incomplete packets dangling at the end
             try (ReplayInputStream in = replayFile.getPacketData(MCVer.getPacketTypeRegistry(true));
-                 ReplayOutputStream out = (ReplayOutputStream) replayFile.write("restoreReplayGui.json")) {
+                 //Uncertain
+                 ReplayOutputStream out = new ReplayOutputStream(replayFile.write("restoreReplayGui.json"))) {
                 while (true) {
                     // To prevent failing at un-parsable packets and to support recovery in minimal mode,
                     // we do not use the ReplayIn/OutputStream methods but instead parse the packets ourselves.

@@ -11,7 +11,8 @@ public interface RenderSpectatorCrosshairCallback {
                         return state;
                     }
                 }
-                return null;
+                // Uncertain
+                return true;
             }
     );
 

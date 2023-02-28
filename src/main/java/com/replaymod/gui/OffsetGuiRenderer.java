@@ -24,13 +24,17 @@
  */
 package com.replaymod.gui;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.replaymod.gui.utils.NonNull;
 import de.johni0702.minecraft.gui.utils.lwjgl.Point;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableColor;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 
 public class OffsetGuiRenderer implements com.replaymod.gui.GuiRenderer {
@@ -125,13 +129,13 @@ public class OffsetGuiRenderer implements com.replaymod.gui.GuiRenderer {
     }
 
     public void startUsing() {
-        GL11.glPushAttrib(GL11.GL_SCISSOR_BIT);
-        GL11.glEnable(GL11.GL_SCISSOR_TEST);
+        //GL11.glPushAttrib(GL11.GL_SCISSOR_BIT);
+        //GL11.glEnable(GL11.GL_SCISSOR_TEST);
         setDrawingArea(0, 0, size.getWidth(), size.getHeight());
     }
 
     public void stopUsing() {
-        GL11.glPopAttrib();
+        //GL11.glPopAttrib();
     }
 
     @Override

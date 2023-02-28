@@ -11,7 +11,8 @@ public interface RenderHotbarCallback {
                         return state;
                     }
                 }
-                return null;
+                //Uncertain
+                return true;
             }
     );
 
